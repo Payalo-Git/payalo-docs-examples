@@ -1,0 +1,16 @@
+@* Coloured badge for a transaction status. Used by Status, Records, and Webhooks pages
+   so the visual treatment of pending/success/failed is consistent everywhere. *@
+
+<span class="badge @CssClass">@Status</span>
+
+@code {
+    [Parameter, EditorRequired] public string Status { get; set; } = "";
+
+    private string CssClass => Status?.ToLowerInvariant() switch
+    {
+        "success" => "bg-success",
+        "failed"  => "bg-danger",
+        "pending" => "bg-warning text-dark",
+        _         => "bg-secondary",
+    };
+}

@@ -1,0 +1,98 @@
+<% const pageTitle = 'Records'; const currentPath = '/records'; %>
+<%- include('_layout', { pageTitle, currentPath }) %>
+
+<h1>Records (bulk reconciliation)</h1>
+<p><code>GET /records</code> — paged window of transactions for catching up after a callback outage or running a daily reconciliation.</p>
+<div class="alert alert-info small">
+  Cursor pagination encodes the original filters, so on follow-up pages we send only the
+  cursor. Editing the filter form after a search resets to page 1 with the new filters.
+</div>
+
+<form method="get" action="/records">
+  <input type="hidden" name="searched" value="1" />
+  <div class="row g-2 align-items-end">
+    <div class="col-md-3">
+      <label class="form-label">From (UTC)</label>
+      <input class="form-control" type="datetime-local" name="from" value="<%= filters.from %>" />
+    </div>
+    <div class="col-md-3">
+      <label class="form-label">To (UTC)</label>
+      <input class="form-control" type="datetime-local" name="to" value="<%= filters.to %>" />
+    </div>
+    <div class="col-md-2">
+      <label class="form-label">Type</label>
+      <select class="form-select" name="type">
+        <% ['', 'payin', 'payout', 'tax'].forEach(v => { %>
+          <option value="<%= v %>" <%= filters.type === v ? 'selected' : '' %>><%= v || '(any)' %></option>
+        <% }) %>
+      </select>
+    </div>
+    <div class="col-md-2">
+      <label class="form-label">Status</label>
+      <select class="form-select" name="status">
+        <% ['', 'pending', 'success', 'failed'].forEach(v => { %>
+          <option value="<%= v %>" <%= filters.status === v ? 'selected' : '' %>><%= v || '(any)' %></option>
+        <% }) %>
+      </select>
+    </div>
+    <div class="col-md-2">
+      <label class="form-label">Page size</label>
+      <input class="form-control" type="number" name="pageSize" value="<%= filters.pageSize %>" />
+    </div>
+  </div>
+  <div class="row g-2 mt-2">
+    <div class="col-md-4"><label class="form-label">Method</label>
+      <input class="form-control" name="method" value="<%= filters.method %>" placeholder="mpesa-ke" /></div>
+    <div class="col-md-8 align-self-end text-end">
+      <button class="btn btn-primary" type="submit">Search</button>
+    </div>
+  </div>
+</form>
+
+<hr class="my-4" />
+
+<%- include('_error', { error }) %>
+
+<% if (page) { %>
+  <% if (!page.data.length) { %>
+    <p class="text-muted"><em>No transactions matched.</em></p>
+  <% } else { %>
+    <table class="table table-sm table-striped">
+      <thead><tr><th>Created</th><th>Type</th><th>Method</th><th>Amount</th><th>Gateway ref</th><th>Merchant ref</th><th>Status</th><th>Error</th></tr></thead>
+      <tbody>
+        <% page.data.forEach(tx => { %>
+          <tr>
+            <td><%= new Date(tx.createdAt).toLocaleString() %></td>
+            <td><small><%= tx.type %> / <%= tx.flow %></small></td>
+            <td><code><%= tx.method %></code></td>
+            <td><%= tx.requestedAmount.value.toFixed(2) %> <%= tx.requestedAmount.currency %></td>
+            <td><a href="/status?gw=<%= encodeURIComponent(tx.gatewayReference) %>"><code><%= tx.gatewayReference %></code></a></td>
+            <td><code><%= tx.merchantReference || '—' %></code></td>
+            <% const cls = { success: 'bg-success', failed: 'bg-danger', pending: 'bg-warning text-dark' }[tx.status] || 'bg-secondary'; %>
+            <td><span class="badge <%= cls %>"><%= tx.status %></span></td>
+            <td>
+              <% if (tx.errorCode) { %>
+                <span class="badge bg-danger" title="<%= tx.errorMessage %>"><%= tx.errorCode %></span>
+              <% } %>
+            </td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+    <div class="d-flex justify-content-between mt-3">
+      <% if (page.pages.previous) { %>
+        <a class="btn btn-outline-secondary" href="/records?page=<%= encodeURIComponent(page.pages.previous) %>">← Previous</a>
+      <% } else { %>
+        <button class="btn btn-outline-secondary" disabled>← Previous</button>
+      <% } %>
+      <small class="text-muted align-self-center"><%= page.data.length %> records on this page.</small>
+      <% if (page.pages.next) { %>
+        <a class="btn btn-outline-secondary" href="/records?page=<%= encodeURIComponent(page.pages.next) %>">Next →</a>
+      <% } else { %>
+        <button class="btn btn-outline-secondary" disabled>Next →</button>
+      <% } %>
+    </div>
+  <% } %>
+<% } %>
+
+<%- include('_footer') %>

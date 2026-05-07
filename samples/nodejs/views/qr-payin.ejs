@@ -1,0 +1,41 @@
+<% const pageTitle = 'QR Pay-In'; const currentPath = '/qr-payin'; %>
+<%- include('_layout', { pageTitle, currentPath }) %>
+
+<%
+const description = `<p><code>POST /qr/payin/{method}</code> — QR-code deposit. The gateway
+POSTs the QR payload to your <code>displayQrUrl</code> after initiation; your application is
+responsible for rendering the QR for the end user to scan.</p>
+<div class="alert alert-info small">
+  The required <code>displayQrUrl</code> is the only structural difference from Direct Pay-In.
+  In a real integration this points at your checkout's QR-render endpoint.
+</div>`;
+
+const extraFields = `
+  <div class="mb-2">
+    <label class="form-label">Display QR URL</label>
+    <input class="form-control" name="displayQrUrl" value="${form.displayQrUrl}" />
+  </div>`;
+
+const successPanel = response ? `
+  <div class="alert alert-success">
+    <h5>Accepted — pending</h5>
+    <table class="table table-sm mb-0"><tbody>
+      <tr><th>gatewayReference</th><td><code>${response.gatewayReference}</code></td></tr>
+      <tr><th>merchantReference</th><td><code>${response.merchantReference}</code></td></tr>
+      <tr><th>createdAt</th><td>${new Date(response.createdAt).toLocaleString()}</td></tr>
+    </tbody></table>
+    <p class="small mt-2 mb-0">📡 Watch <a href="/webhooks">/webhooks</a> for the terminal callback.</p>
+  </div>` : '';
+%>
+
+<%- include('_initiate-form', {
+  title: 'QR Pay-In',
+  description,
+  actionUrl: '/qr-payin',
+  submitLabel: 'Initiate QR pay-in',
+  form, response, error, successPanel,
+  partyLabel: 'Payer',
+  extraFields,
+}) %>
+
+<%- include('_footer') %>

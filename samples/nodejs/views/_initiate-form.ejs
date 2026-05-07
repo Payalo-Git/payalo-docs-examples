@@ -1,0 +1,72 @@
+<%# Reusable form helper for the 5 initiation pages. Locals:
+     - title (string)
+     - description (HTML)
+     - actionUrl (string)
+     - submitLabel (string)
+     - form (object)
+     - extraFields (HTML rendered after Routing, before submit)
+     - response (object|null)
+     - successPanel (HTML rendered when response is set)
+%>
+<h1><%= title %></h1>
+<%- description %>
+
+<div class="row">
+  <div class="col-lg-7">
+    <form method="post" action="<%= actionUrl %>">
+      <div class="mb-3">
+        <label class="form-label">Method key</label>
+        <input class="form-control" name="method" value="<%= form.method %>" />
+      </div>
+
+      <h4>Amount</h4>
+      <div class="row g-2">
+        <div class="col">
+          <label class="form-label">Value</label>
+          <input class="form-control" name="value" type="number" step="0.01" value="<%= form.value %>" />
+        </div>
+        <div class="col">
+          <label class="form-label">Currency</label>
+          <input class="form-control" name="currency" value="<%= form.currency %>" />
+        </div>
+      </div>
+
+      <% if (typeof showParty === 'undefined' || showParty) { %>
+        <h4 class="mt-4"><%= partyLabel %></h4>
+        <div class="mb-2">
+          <label class="form-label">User ID</label>
+          <input class="form-control" name="userId" value="<%= form.userId %>" />
+        </div>
+        <div class="mb-2">
+          <label class="form-label">MSISDN</label>
+          <input class="form-control" name="msisdn" value="<%= form.msisdn %>" />
+        </div>
+      <% } %>
+
+      <h4 class="mt-4">Routing</h4>
+      <div class="mb-2">
+        <label class="form-label">Country</label>
+        <input class="form-control" name="country" value="<%= form.country %>" />
+      </div>
+      <div class="mb-2">
+        <label class="form-label">Result URL</label>
+        <input class="form-control" name="resultUrl" value="<%= form.resultUrl %>" />
+      </div>
+      <%- typeof extraFields === 'string' ? extraFields : '' %>
+      <div class="mb-2">
+        <label class="form-label">Merchant reference</label>
+        <input class="form-control" name="merchantReference" value="<%= form.merchantReference %>" />
+        <div class="form-text">Auto-bumps after every submit so dupes are impossible.</div>
+      </div>
+
+      <button class="btn btn-primary mt-3" type="submit"><%= submitLabel %></button>
+    </form>
+  </div>
+
+  <div class="col-lg-5">
+    <%- include('_error', { error }) %>
+    <% if (response) { %>
+      <%- successPanel %>
+    <% } %>
+  </div>
+</div>

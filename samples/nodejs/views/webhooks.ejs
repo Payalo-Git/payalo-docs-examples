@@ -1,0 +1,47 @@
+<% const pageTitle = 'Webhooks'; const currentPath = '/webhooks'; %>
+<%- include('_layout', { pageTitle, currentPath }) %>
+
+<h1>Webhook callbacks</h1>
+<p>
+  The gateway POSTs the V2 transaction object to your <code>resultUrl</code> when a
+  transaction reaches a terminal state. The body shape matches
+  <code>GET /status/{gatewayReference}</code> exactly, so the same DTO covers both.
+</p>
+
+<div class="alert alert-info small">
+  <p class="mb-1"><strong>Endpoint:</strong> <code>POST <%= config.webhookPath %></code></p>
+  <p class="mb-0"><strong>Public URL:</strong>
+    <code><%= config.publicBaseUrl ? config.publicBaseUrl.replace(/\/$/, '') + config.webhookPath : '(set PAYALO_PUBLIC_BASE_URL to your ngrok / public hostname)' %></code></p>
+</div>
+
+<div class="d-flex align-items-center mb-3">
+  <h4 class="mb-0 me-3">Received (<%= entries.length %>)</h4>
+  <form method="post" action="/webhooks/clear" class="m-0">
+    <button class="btn btn-sm btn-outline-secondary" type="submit">Clear list</button>
+  </form>
+</div>
+
+<% if (!entries.length) { %>
+  <p class="text-muted"><em>No callbacks yet. Initiate a payment, then refresh this page.</em></p>
+<% } else { %>
+  <table class="table table-sm">
+    <thead><tr><th>Received</th><th>Status</th><th>Type / Flow</th><th>Gateway ref</th><th>Merchant ref</th><th>Method</th><th>Amount</th><th>Error</th></tr></thead>
+    <tbody>
+      <% entries.forEach(e => { %>
+        <tr>
+          <td><small><%= e.receivedAt.toLocaleTimeString() %></small></td>
+          <% const cls = { success: 'bg-success', failed: 'bg-danger', pending: 'bg-warning text-dark' }[e.payload.status] || 'bg-secondary'; %>
+          <td><span class="badge <%= cls %>"><%= e.payload.status %></span></td>
+          <td><small><%= e.payload.type %> / <%= e.payload.flow %></small></td>
+          <td><a href="/status?gw=<%= encodeURIComponent(e.payload.gatewayReference) %>"><code><%= e.payload.gatewayReference %></code></a></td>
+          <td><code><%= e.payload.merchantReference || '—' %></code></td>
+          <td><code><%= e.payload.method %></code></td>
+          <td><%= Number(e.payload.requestedAmount.value).toFixed(2) %> <%= e.payload.requestedAmount.currency %></td>
+          <td><% if (e.payload.errorCode) { %><span class="badge bg-danger" title="<%= e.payload.errorMessage %>"><%= e.payload.errorCode %></span><% } %></td>
+        </tr>
+      <% }) %>
+    </tbody>
+  </table>
+<% } %>
+
+<%- include('_footer') %>

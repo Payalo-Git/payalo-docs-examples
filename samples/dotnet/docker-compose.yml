@@ -1,0 +1,12 @@
+services:
+  sample:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: payalo-sample-web:local
+    container_name: payalo-sample-web
+    ports:
+      - "8080:8080"
+    env_file:
+      - .env
+    restart: unless-stopped

@@ -1,0 +1,151 @@
+@page "/direct-payin"
+@using Microsoft.Extensions.Options
+@inject PayAloClient Client
+@inject IOptionsMonitor<PayAloOptions> OptionsMonitor
+@rendermode InteractiveServer
+
+<PageTitle>Direct Pay-In — PayAlo Samples</PageTitle>
+
+<h1>Direct Pay-In</h1>
+<p>
+    <code>POST /direct/payin/{method}</code> — server-to-server deposit. The end user
+    receives an STK push (or equivalent) on their phone and approves the payment in
+    their mobile money app.
+</p>
+
+<div class="alert alert-info small">
+    The gateway returns <code>200 OK</code> with status <em>pending</em> immediately. The
+    actual outcome is delivered later as a webhook to <code>resultUrl</code> — watch the
+    <a href="webhooks">Webhooks</a> page.
+</div>
+
+<div class="row">
+    <div class="col-lg-7">
+        <EditForm Model="_request" OnValidSubmit="SubmitAsync" FormName="direct-payin">
+            <DataAnnotationsValidator />
+
+            <div class="mb-3">
+                <label class="form-label">Method key</label>
+                <InputText class="form-control" @bind-Value="_method" placeholder="e.g. mpesa-ke" />
+            </div>
+
+            <h4>Amount</h4>
+            <div class="row g-2">
+                <div class="col">
+                    <label class="form-label">Value</label>
+                    <InputNumber class="form-control" @bind-Value="_request.Amount.Value" step="0.01" />
+                </div>
+                <div class="col">
+                    <label class="form-label">Currency</label>
+                    <InputText class="form-control" @bind-Value="_request.Amount.Currency" />
+                </div>
+            </div>
+
+            <h4 class="mt-4">Payer</h4>
+            <div class="mb-2">
+                <label class="form-label">User ID</label>
+                <InputText class="form-control" @bind-Value="_request.Payer.Id" />
+            </div>
+            <div class="mb-2">
+                <label class="form-label">MSISDN (international format)</label>
+                <InputText class="form-control" @bind-Value="_request.Payer.Msisdn" />
+                <ValidationMessage For="() => _request.Payer.Msisdn" />
+            </div>
+
+            <h4 class="mt-4">Routing</h4>
+            <div class="mb-2">
+                <label class="form-label">Country</label>
+                <InputText class="form-control" @bind-Value="_request.Country" />
+            </div>
+            <div class="mb-2">
+                <label class="form-label">Result URL</label>
+                <InputText class="form-control" @bind-Value="_request.ResultUrl" />
+                <div class="form-text">
+                    Pre-filled from <code>PayAlo:PublicBaseUrl + WebhookPath</code>. Must be HTTPS in production.
+                </div>
+            </div>
+            <div class="mb-2">
+                <label class="form-label">Merchant reference (idempotency key)</label>
+                <InputText class="form-control" @bind-Value="_request.MerchantReference" />
+                <div class="form-text">Auto-bumps after every submit so dupes are impossible.</div>
+            </div>
+
+            <button type="submit" class="btn btn-primary mt-3" disabled="@_isSubmitting">
+                @(_isSubmitting ? "Submitting…" : "Initiate pay-in")
+            </button>
+        </EditForm>
+    </div>
+
+    <div class="col-lg-5">
+        @if (_apiException is not null)
+        {
+            <ProblemDetailsAlert Exception="_apiException" />
+        }
+        else if (_response is not null)
+        {
+            <div class="alert alert-success">
+                <h5>Accepted — pending</h5>
+                <table class="table table-sm mb-0">
+                    <tbody>
+                        <tr><th>gatewayReference</th><td><code>@_response.GatewayReference</code></td></tr>
+                        <tr><th>merchantReference</th><td><code>@_response.MerchantReference</code></td></tr>
+                        <tr><th>createdAt</th><td>@_response.CreatedAt.ToLocalTime():g</td></tr>
+                    </tbody>
+                </table>
+                <p class="small mt-2 mb-0">
+                    📡 Watch <a href="webhooks">/webhooks</a> for the terminal callback, or
+                    <a href="@($"status?gw={_response.GatewayReference}")">look up the status</a>.
+                </p>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    private readonly PayInRequest _request = new();
+    private string _method = "mpesa-ke";
+    private InitiatePaymentResponseDto? _response;
+    private PayAloApiException? _apiException;
+    private bool _isSubmitting;
+
+    protected override void OnInitialized() => SeedRequest();
+
+    private void SeedRequest()
+    {
+        var options = OptionsMonitor.CurrentValue;
+        var publicBase = string.IsNullOrWhiteSpace(options.PublicBaseUrl)
+            ? "https://example.com"
+            : options.PublicBaseUrl.TrimEnd('/');
+
+        _request.Amount.Value = 500.00m;
+        _request.Amount.Currency = "KES";
+        _request.Payer.Id = "user-42";
+        _request.Payer.Msisdn = "+254712345678";
+        _request.Country = "KE";
+        _request.ResultUrl = $"{publicBase}{options.WebhookPath}";
+        _request.MerchantReference = $"dep-{Guid.NewGuid():N}";
+    }
+
+    private async Task SubmitAsync()
+    {
+        _isSubmitting = true;
+        _response = null;
+        _apiException = null;
+
+        try
+        {
+            _response = await Client.CreateDirectPayInAsync(_method.Trim(), _request);
+        }
+        catch (PayAloApiException ex)
+        {
+            _apiException = ex;
+        }
+        finally
+        {
+            _isSubmitting = false;
+            // Every submit consumes a merchantReference, even on failure. Generate the next
+            // one so a quick re-submit doesn't trigger merchant_transactionid_duplicate.
+            _request.MerchantReference = $"dep-{Guid.NewGuid():N}";
+        }
+    }
+}
