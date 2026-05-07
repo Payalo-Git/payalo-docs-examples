@@ -1,0 +1,114 @@
+@page "/webhooks"
+@using Microsoft.Extensions.Options
+@implements IDisposable
+@inject WebhookStore Store
+@inject IOptionsMonitor<PayAloOptions> OptionsMonitor
+@rendermode InteractiveServer
+
+<PageTitle>Webhooks — PayAlo Samples</PageTitle>
+
+<h1>Webhook callbacks</h1>
+<p>
+    The gateway POSTs the V2 transaction object to your <code>resultUrl</code> when a
+    transaction reaches a terminal state. The body shape matches
+    <code>GET /status/{gatewayReference}</code> exactly, so the same DTO covers both.
+    This page lists everything the local endpoint has received since startup.
+</p>
+
+<div class="alert alert-info small">
+    <p class="mb-1">
+        <strong>Endpoint:</strong> <code>POST @_options.WebhookPath</code>
+    </p>
+    <p class="mb-0">
+        <strong>Public URL:</strong>
+        <code>
+            @(string.IsNullOrWhiteSpace(_options.PublicBaseUrl)
+                ? "(set PayAlo:PublicBaseUrl to your ngrok / public hostname)"
+                : $"{_options.PublicBaseUrl.TrimEnd('/')}{_options.WebhookPath}")
+        </code>
+    </p>
+</div>
+
+<div class="d-flex align-items-center mb-3">
+    <h4 class="mb-0 me-3">Received (@_entries.Count)</h4>
+    <button class="btn btn-sm btn-outline-secondary" @onclick="Clear">Clear list</button>
+</div>
+
+@if (_entries.Count == 0)
+{
+    <p class="text-muted">
+        <em>No callbacks yet. Initiate a payment, then watch this page — it auto-refreshes.</em>
+    </p>
+}
+else
+{
+    <table class="table table-sm">
+        <thead>
+            <tr>
+                <th>Received</th>
+                <th>Status</th>
+                <th>Type / Flow</th>
+                <th>Gateway ref</th>
+                <th>Merchant ref</th>
+                <th>Method</th>
+                <th>Amount</th>
+                <th>Error</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var e in _entries)
+            {
+                <tr>
+                    <td><small>@e.ReceivedAt.ToLocalTime().ToString("HH:mm:ss")</small></td>
+                    <td><StatusBadge Status="e.Payload.Status" /></td>
+                    <td><small>@e.Payload.Type / @e.Payload.Flow</small></td>
+                    <td>
+                        <a href="@($"status?gw={e.Payload.GatewayReference}")">
+                            <code>@e.Payload.GatewayReference</code>
+                        </a>
+                    </td>
+                    <td><code>@(string.IsNullOrEmpty(e.Payload.MerchantReference) ? "—" : e.Payload.MerchantReference)</code></td>
+                    <td><code>@e.Payload.Method</code></td>
+                    <td>@e.Payload.RequestedAmount.Value.ToString("0.00") @e.Payload.RequestedAmount.Currency</td>
+                    <td>
+                        @if (!string.IsNullOrEmpty(e.Payload.ErrorCode))
+                        {
+                            <span class="badge bg-danger" title="@e.Payload.ErrorMessage">@e.Payload.ErrorCode</span>
+                        }
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private PayAloOptions _options = new();
+    private IReadOnlyList<WebhookEntry> _entries = Array.Empty<WebhookEntry>();
+
+    protected override void OnInitialized()
+    {
+        _options = OptionsMonitor.CurrentValue;
+        _entries = Store.Snapshot();
+        // Repaint when a new callback lands. Webhook events arrive on the request thread,
+        // not Blazor's circuit thread — InvokeAsync marshals back to the renderer.
+        Store.Changed += OnStoreChanged;
+    }
+
+    private async void OnStoreChanged()
+    {
+        await InvokeAsync(() =>
+        {
+            _entries = Store.Snapshot();
+            StateHasChanged();
+        });
+    }
+
+    private void Clear()
+    {
+        Store.Clear();
+        _entries = Store.Snapshot();
+    }
+
+    public void Dispose() => Store.Changed -= OnStoreChanged;
+}

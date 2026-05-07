@@ -1,0 +1,46 @@
+@* Renders a PayAloApiException as a Bootstrap alert with the parsed Problem Details and
+   a friendly explanation pulled from PayAloErrorMessages. Use this in every page that
+   calls the PayAloClient so error UX stays consistent. *@
+
+@if (Exception is not null)
+{
+    <div class="alert alert-danger" role="alert">
+        <h5 class="alert-heading mb-1">
+            @((int)Exception.StatusCode) @Exception.StatusCode
+            @if (!string.IsNullOrWhiteSpace(Exception.ErrorCode))
+            {
+                <span class="badge bg-danger ms-2">@Exception.ErrorCode</span>
+            }
+        </h5>
+
+        @if (!string.IsNullOrWhiteSpace(Exception.Title))
+        {
+            <strong>@Exception.Title.</strong>
+        }
+
+        <span>@(Exception.Detail ?? Exception.Message)</span>
+
+        <hr />
+        <small class="text-muted">
+            @PayAloErrorMessages.Describe(Exception.ErrorCode, fallback: "Check the request body and try again.")
+        </small>
+
+        @if (!Exception.IsRetryable)
+        {
+            <div class="mt-2 small">
+                <em>Not retryable — use a fresh <code>merchantReference</code> before resubmitting.</em>
+            </div>
+        }
+
+        @if (!string.IsNullOrWhiteSpace(Exception.TraceId))
+        {
+            <div class="mt-2 small text-muted">
+                Trace: <code>@Exception.TraceId</code>
+            </div>
+        }
+    </div>
+}
+
+@code {
+    [Parameter] public PayAloApiException? Exception { get; set; }
+}
