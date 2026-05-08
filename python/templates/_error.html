@@ -1,0 +1,19 @@
+{# Renders a Payalo gateway error in a Bootstrap alert. Pass `error` (dict). #}
+{% if error %}
+  <div class="alert alert-danger" role="alert">
+    <h5 class="alert-heading mb-1">
+      {{ error.status }}
+      {% if error.error_code %}<span class="badge bg-danger ms-2">{{ error.error_code }}</span>{% endif %}
+    </h5>
+    {% if error.title %}<strong>{{ error.title }}.</strong> {% endif %}
+    <span>{{ error.detail }}</span>
+    <hr />
+    <small class="text-muted">{{ error.friendly }}</small>
+    {% if not error.is_retryable %}
+      <div class="mt-2 small"><em>Not retryable — use a fresh <code>merchantReference</code> before resubmitting.</em></div>
+    {% endif %}
+    {% if error.trace_id %}
+      <div class="mt-2 small text-muted">Trace: <code>{{ error.trace_id }}</code></div>
+    {% endif %}
+  </div>
+{% endif %}

@@ -1,0 +1,144 @@
+@page "/direct-payout"
+@using Microsoft.Extensions.Options
+@inject PayaloClient Client
+@inject IOptionsMonitor<PayaloOptions> OptionsMonitor
+@rendermode InteractiveServer
+
+<PageTitle>Direct Pay-Out — Payalo Samples</PageTitle>
+
+<h1>Direct Pay-Out</h1>
+<p>
+    <code>POST /direct/payout/{method}</code> — disbursement. Funds flow from your merchant
+    wallet to the end user's mobile money account. The party field is named
+    <code>payee</code> instead of <code>payer</code>.
+</p>
+
+<div class="alert alert-info small">
+    Same async lifecycle as pay-ins. Insufficient merchant wallet funds surface as
+    <code>merchant_insufficient_funds</code> on the callback.
+</div>
+
+<div class="row">
+    <div class="col-lg-7">
+        <EditForm Model="_request" OnValidSubmit="SubmitAsync" FormName="direct-payout">
+            <DataAnnotationsValidator />
+
+            <div class="mb-3">
+                <label class="form-label">Method key</label>
+                <InputText class="form-control" @bind-Value="_method" placeholder="e.g. mpesa-ke" />
+            </div>
+
+            <h4>Amount</h4>
+            <div class="row g-2">
+                <div class="col">
+                    <label class="form-label">Value</label>
+                    <InputNumber class="form-control" @bind-Value="_request.Amount.Value" step="0.01" />
+                </div>
+                <div class="col">
+                    <label class="form-label">Currency</label>
+                    <InputText class="form-control" @bind-Value="_request.Amount.Currency" />
+                </div>
+            </div>
+
+            <h4 class="mt-4">Payee</h4>
+            <div class="mb-2">
+                <label class="form-label">User ID</label>
+                <InputText class="form-control" @bind-Value="_request.Payee.Id" />
+            </div>
+            <div class="mb-2">
+                <label class="form-label">MSISDN</label>
+                <InputText class="form-control" @bind-Value="_request.Payee.Msisdn" />
+                <ValidationMessage For="() => _request.Payee.Msisdn" />
+            </div>
+
+            <h4 class="mt-4">Routing</h4>
+            <div class="mb-2">
+                <label class="form-label">Country</label>
+                <InputText class="form-control" @bind-Value="_request.Country" />
+            </div>
+            <div class="mb-2">
+                <label class="form-label">Result URL</label>
+                <InputText class="form-control" @bind-Value="_request.ResultUrl" />
+            </div>
+            <div class="mb-2">
+                <label class="form-label">Merchant reference</label>
+                <InputText class="form-control" @bind-Value="_request.MerchantReference" />
+            </div>
+
+            <button type="submit" class="btn btn-primary mt-3" disabled="@_isSubmitting">
+                @(_isSubmitting ? "Submitting…" : "Initiate pay-out")
+            </button>
+        </EditForm>
+    </div>
+
+    <div class="col-lg-5">
+        @if (_apiException is not null)
+        {
+            <ProblemDetailsAlert Exception="_apiException" />
+        }
+        else if (_response is not null)
+        {
+            <div class="alert alert-success">
+                <h5>Accepted — pending</h5>
+                <table class="table table-sm mb-0">
+                    <tbody>
+                        <tr><th>gatewayReference</th><td><code>@_response.GatewayReference</code></td></tr>
+                        <tr><th>merchantReference</th><td><code>@_response.MerchantReference</code></td></tr>
+                        <tr><th>createdAt</th><td>@_response.CreatedAt.ToLocalTime():g</td></tr>
+                    </tbody>
+                </table>
+                <p class="small mt-2 mb-0">
+                    📡 Watch <a href="webhooks">/webhooks</a> for the terminal callback, or
+                    <a href="@($"status?gw={_response.GatewayReference}")">look up the status</a>.
+                </p>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    private readonly PayOutRequest _request = new();
+    private string _method = "mpesa-ke";
+    private InitiatePaymentResponseDto? _response;
+    private PayaloApiException? _apiException;
+    private bool _isSubmitting;
+
+    protected override void OnInitialized() => SeedRequest();
+
+    private void SeedRequest()
+    {
+        var options = OptionsMonitor.CurrentValue;
+        var publicBase = string.IsNullOrWhiteSpace(options.PublicBaseUrl)
+            ? "https://example.com"
+            : options.PublicBaseUrl.TrimEnd('/');
+
+        _request.Amount.Value = 1000.00m;
+        _request.Amount.Currency = "KES";
+        _request.Payee.Id = "user-42";
+        _request.Payee.Msisdn = "+254712345678";
+        _request.Country = "KE";
+        _request.MerchantReference = $"payout-{Guid.NewGuid():N}";
+        _request.ResultUrl = $"{publicBase}{options.WebhookPath}";
+    }
+
+    private async Task SubmitAsync()
+    {
+        _isSubmitting = true;
+        _response = null;
+        _apiException = null;
+
+        try
+        {
+            _response = await Client.CreateDirectPayOutAsync(_method.Trim(), _request);
+        }
+        catch (PayaloApiException ex)
+        {
+            _apiException = ex;
+        }
+        finally
+        {
+            _isSubmitting = false;
+            _request.MerchantReference = $"payout-{Guid.NewGuid():N}";
+        }
+    }
+}

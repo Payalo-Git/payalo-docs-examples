@@ -1,8 +1,0 @@
-<Solution>
-  <Folder Name="/src/">
-    <Project Path="PayAlo.Sample.Web/PayAlo.Sample.Web.csproj" />
-  </Folder>
-  <Folder Name="/tests/">
-    <Project Path="tests/PayAlo.Sample.Web.Tests/PayAlo.Sample.Web.Tests.csproj" />
-  </Folder>
-</Solution>

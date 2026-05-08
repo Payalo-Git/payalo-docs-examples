@@ -1,0 +1,55 @@
+{% extends "layout.html" %}
+{% block title %}Home — Payalo Python Sample{% endblock %}
+{% block content %}
+
+<h1>Payalo Merchant Gateway v2 — Python sample</h1>
+<p class="lead">A walkthrough of the core merchant flows in Python + FastAPI + httpx.</p>
+
+<h2 class="mt-4">Configuration check</h2>
+<table class="table table-bordered w-auto">
+  <tbody>
+    <tr><th class="bg-light">Base URL</th><td><code>{{ config.base_url }}</code></td></tr>
+    <tr>
+      <th class="bg-light">API key</th>
+      <td>
+        {% if not config.api_key %}
+          <span class="text-danger">not set</span>
+        {% else %}
+          <code>{{ config.api_key[:3] }}…{{ config.api_key[-3:] }}</code>
+          <small class="text-muted ms-2">({{ config.api_key|length }} chars)</small>
+        {% endif %}
+      </td>
+    </tr>
+    <tr><th class="bg-light">Public base URL</th><td><code>{{ config.public_base_url or '(not set — webhooks unreachable)' }}</code></td></tr>
+    <tr>
+      <th class="bg-light">Webhook URL</th>
+      <td><code>{{ (config.public_base_url.rstrip('/') if config.public_base_url else '<your-public-host>') ~ config.webhook_path }}</code></td>
+    </tr>
+  </tbody>
+</table>
+
+{% if not config.api_key %}
+  <div class="alert alert-warning">
+    <strong>Set <code>PAYALO_API_KEY</code></strong> before exercising the demos. See the README.
+  </div>
+{% endif %}
+
+<h2 class="mt-4">Live API check</h2>
+<p>
+  Hits <code>GET /records</code> over the last 5 minutes to confirm your API key is
+  accepted. A successful call (even with no records) is enough to validate connectivity.
+</p>
+<form method="post" action="/connectivity-check">
+  <button class="btn btn-primary" type="submit" {% if not config.api_key %}disabled{% endif %}>Run connectivity check</button>
+</form>
+
+{% include "_error.html" %}
+
+{% if connectivity %}
+  <div class="alert alert-success mt-3">
+    Connected. <code>GET /records</code> returned
+    <strong>{{ connectivity.count }}</strong> transaction(s) in the last 5 minutes.
+  </div>
+{% endif %}
+
+{% endblock %}

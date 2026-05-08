@@ -1,14 +1,15 @@
-# PayAlo Merchant Gateway v2 — Integration Examples
+# Payalo Merchant Gateway v2 — Integration Examples
 
-Reference applications for the PayAlo Merchant Gateway v2 in three idiomatic stacks.
+Reference applications for the Payalo Merchant Gateway v2 in three idiomatic stacks.
 All three samples cover the same surface — pick the one closest to your production codebase
 and read the per-sample README for setup.
 
 | Sample | Stack | README |
 |---|---|---|
-| **`samples/dotnet/`** | Blazor Web App on .NET 9, typed `HttpClient` + Polly resilience | [README](samples/dotnet/README.md) |
-| **`samples/nodejs/`** | TypeScript + Express + EJS, `axios` client | [README](samples/nodejs/README.md) |
-| **`samples/python/`** | Python 3.12 + FastAPI + Jinja2, `httpx` client | [README](samples/python/README.md) |
+| **`dotnet/Payalo.Sample.Web/`** | Blazor Web App on .NET 9, typed `HttpClient` + Polly resilience | [README](dotnet/README.md) |
+| **`dotnet/Payalo.Sample.Console/`** | .NET 9 CLI sharing the same typed-client patterns (no webhook receiver) | [README](dotnet/Payalo.Sample.Console/README.md) |
+| **`nodejs/`** | TypeScript + Express + EJS, `axios` client | [README](nodejs/README.md) |
+| **`python/`** | Python 3.12 + FastAPI + Jinja2, `httpx` client | [README](python/README.md) |
 
 The full V2 API reference is on the documentation site at
 [docs.payalo.com](http://docs.payalo.com).
@@ -34,17 +35,25 @@ self-contained integration reference an intermediate developer can read in an af
 ### .NET (Blazor)
 
 ```bash
-cd samples/dotnet/PayAlo.Sample.Web
-dotnet user-secrets set "PayAlo:ApiKey" "pk_live_replace_me"
+cd dotnet/Payalo.Sample.Web
+dotnet user-secrets set "Payalo:ApiKey" "pk_live_replace_me"
 dotnet run
 ```
 
 Open <https://localhost:5044>.
 
+### .NET (Console CLI)
+
+```bash
+cd dotnet/Payalo.Sample.Console
+dotnet user-secrets set "Payalo:ApiKey" "pk_live_replace_me"
+dotnet run -- help
+```
+
 ### Node.js (Express + TypeScript)
 
 ```bash
-cd samples/nodejs
+cd nodejs
 cp .env.example .env       # then edit PAYALO_API_KEY
 npm install
 npm run dev
@@ -55,7 +64,7 @@ Open <http://localhost:3000>.
 ### Python (FastAPI)
 
 ```bash
-cd samples/python
+cd python
 python -m venv .venv
 source .venv/bin/activate  # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
@@ -71,7 +80,7 @@ Open <http://localhost:8000>.
 
 The gateway can't reach `localhost`. Run a public HTTPS tunnel
 ([ngrok](https://ngrok.com/) is the easiest), point your sample's
-`PAYALO_PUBLIC_BASE_URL` (or `PayAlo:PublicBaseUrl` in .NET) at the tunnel hostname,
+`PAYALO_PUBLIC_BASE_URL` (or `Payalo:PublicBaseUrl` in .NET) at the tunnel hostname,
 restart the app, and submit a flow. The Webhooks page shows everything the receiver
 captures.
 
@@ -81,11 +90,13 @@ captures.
 
 ```
 payalo-integration-examples/
-  samples/
-    dotnet/          # Blazor + .NET 9 sample, with xUnit tests + Dockerfile + compose
-    nodejs/          # TypeScript + Express + EJS sample
-    python/          # Python 3.12 + FastAPI + Jinja2 sample
-  .github/workflows/ # GitHub Actions CI (.NET build + tests)
+  dotnet/                     # .NET 9 solution
+    Payalo.Sample.Web/        # Blazor sample (xUnit tests + Dockerfile + compose)
+    Payalo.Sample.Console/    # CLI sample (no webhook receiver)
+    tests/
+  nodejs/                     # TypeScript + Express + EJS sample
+  python/                     # Python 3.12 + FastAPI + Jinja2 sample
+  .github/workflows/          # GitHub Actions CI (.NET build + tests)
 ```
 
 Tests + CI currently cover the .NET sample only. The Node and Python samples are

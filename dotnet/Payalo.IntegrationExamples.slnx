@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="Payalo.Sample.Web/Payalo.Sample.Web.csproj" />
+    <Project Path="Payalo.Sample.Console/Payalo.Sample.Console.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Payalo.Sample.Web.Tests/Payalo.Sample.Web.Tests.csproj" />
+  </Folder>
+</Solution>

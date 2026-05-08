@@ -1,0 +1,75 @@
+{% extends "layout.html" %}
+{% block title %}Status Lookup — Payalo Python Sample{% endblock %}
+{% block content %}
+
+<h1>Status Lookup</h1>
+<p>Two endpoints; same response shape. Useful as a fallback when callbacks are missed.</p>
+<div class="alert alert-info small">
+  Wait at least <strong>2 minutes</strong> between polls — the gateway only re-checks the provider that often.
+</div>
+
+<div class="row g-3">
+  <div class="col-md-6">
+    <h4>By gateway reference</h4>
+    <p class="small text-muted mb-2"><code>GET /status/{gatewayReference}</code></p>
+    <form method="get" action="/status" class="input-group">
+      <input class="form-control" name="gw" value="{{ gw }}" placeholder="01J1ABCDEF123456" />
+      <button class="btn btn-primary" type="submit">Lookup</button>
+    </form>
+  </div>
+  <div class="col-md-6">
+    <h4>By merchant reference</h4>
+    <p class="small text-muted mb-2"><code>GET /status/mref/{merchantReference}</code></p>
+    <form method="get" action="/status" class="input-group">
+      <input class="form-control" name="mref" value="{{ mref }}" placeholder="dep-…" />
+      <button class="btn btn-primary" type="submit">Lookup</button>
+    </form>
+  </div>
+</div>
+
+<hr class="my-4" />
+
+{% include "_error.html" %}
+
+{% if transaction %}
+  {% set badge_cls = {'success': 'bg-success', 'failed': 'bg-danger', 'pending': 'bg-warning text-dark'}.get(transaction.status, 'bg-secondary') %}
+  <h3>
+    {{ transaction.type }} — {{ transaction.flow }}
+    <span class="badge {{ badge_cls }}">{{ transaction.status }}</span>
+  </h3>
+  <div class="row">
+    <div class="col-lg-6">
+      <table class="table table-sm">
+        <tbody>
+          <tr><th>gatewayReference</th><td><code>{{ transaction.gateway_reference }}</code></td></tr>
+          <tr><th>merchantReference</th><td><code>{{ transaction.merchant_reference or '—' }}</code></td></tr>
+          <tr><th>providerReference</th><td><code>{{ transaction.provider_reference or '—' }}</code></td></tr>
+          <tr><th>method / country</th><td><code>{{ transaction.method }}</code> / {{ transaction.country }}</td></tr>
+          <tr><th>requested</th><td>{{ '%.2f'|format(transaction.requested_amount.value) }} {{ transaction.requested_amount.currency }}</td></tr>
+          <tr><th>final</th><td>
+            {% if transaction.final_amount %}{{ '%.2f'|format(transaction.final_amount.value) }} {{ transaction.final_amount.currency }}
+            {% else %}<em class="text-muted">not settled</em>{% endif %}
+          </td></tr>
+          <tr><th>createdAt</th><td>{{ transaction.created_at }}</td></tr>
+          <tr><th>completedAt</th><td>{{ transaction.completed_at or '—' }}</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="col-lg-6">
+      {% if transaction.status == 'failed' and transaction.error_code %}
+        <div class="alert alert-danger">
+          <h5 class="mb-1">Failed <span class="badge bg-danger ms-2">{{ transaction.error_code }}</span></h5>
+          <strong>{{ transaction.error_message or '' }}</strong>
+          <hr />
+          <small>{{ describe(transaction.error_code, transaction.error_message) }}</small>
+        </div>
+      {% elif transaction.status == 'pending' %}
+        <div class="alert alert-warning">Still processing — wait a couple of minutes and re-lookup.</div>
+      {% elif transaction.status == 'success' %}
+        <div class="alert alert-success">Transaction settled successfully.</div>
+      {% endif %}
+    </div>
+  </div>
+{% endif %}
+
+{% endblock %}
