@@ -10,8 +10,8 @@ and read the per-sample README for setup.
 | **`samples/nodejs/`** | TypeScript + Express + EJS, `axios` client | [README](samples/nodejs/README.md) |
 | **`samples/python/`** | Python 3.12 + FastAPI + Jinja2, `httpx` client | [README](samples/python/README.md) |
 
-The full V2 API reference is in the sister repo
-[`payalo-docs`](https://github.com/Payalo-Git/payalo-docs).
+The full V2 API reference is on the documentation site at
+[docs.payalo.com](http://docs.payalo.com).
 
 ---
 
