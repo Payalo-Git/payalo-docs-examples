@@ -10,7 +10,7 @@ import type { MmoTransactionDto } from "./payaloClient.js";
 //   - POSTs application/json to your `resultUrl`,
 //   - includes the `X-API-KEY` header set to *your* brand API key,
 //   - delivers the same V2 MmoTransactionDto shape returned by GET /status/{ref},
-//   - expects a JSON body of `{ "status": "ok" }` within 15 seconds,
+//   - expects any 2xx response within 15 seconds; the response body is optional and informational only,
 //   - retries up to 5 times on non-2xx with linear backoff,
 //   - may redeliver a previously-acknowledged callback in rare cases (be idempotent).
 
