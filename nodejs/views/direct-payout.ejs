@@ -1,0 +1,34 @@
+<% const pageTitle = 'Direct Pay-Out'; const currentPath = '/direct-payout'; %>
+<%- include('_layout', { pageTitle, currentPath }) %>
+
+<%
+const description = `<p><code>POST /direct/payout/{method}</code> — disbursement. Funds flow
+from your merchant wallet to the end user's mobile money account. The party field is
+named <code>payee</code> instead of <code>payer</code>.</p>
+<div class="alert alert-info small">
+  Same async lifecycle as pay-ins. Insufficient merchant wallet funds surface as
+  <code>merchant_insufficient_funds</code> on the callback.
+</div>`;
+
+const successPanel = response ? `
+  <div class="alert alert-success">
+    <h5>Accepted — pending</h5>
+    <table class="table table-sm mb-0"><tbody>
+      <tr><th>gatewayReference</th><td><code>${response.gatewayReference}</code></td></tr>
+      <tr><th>merchantReference</th><td><code>${response.merchantReference}</code></td></tr>
+      <tr><th>createdAt</th><td>${new Date(response.createdAt).toLocaleString()}</td></tr>
+    </tbody></table>
+    <p class="small mt-2 mb-0">📡 Watch <a href="/webhooks">/webhooks</a> for the terminal callback.</p>
+  </div>` : '';
+%>
+
+<%- include('_initiate-form', {
+  title: 'Direct Pay-Out',
+  description,
+  actionUrl: '/direct-payout',
+  submitLabel: 'Initiate pay-out',
+  form, response, error, successPanel,
+  partyLabel: 'Payee',
+}) %>
+
+<%- include('_footer') %>

@@ -1,0 +1,63 @@
+<% const pageTitle = 'Direct Tax Payout'; const currentPath = '/direct-tax-payout'; %>
+<%- include('_layout', { pageTitle, currentPath }) %>
+
+<h1>Direct Tax Payout</h1>
+<p>
+  <code>POST /direct/taxpayout/{method}</code> — disburse to a tax authority. The payee is
+  implicit (the tax authority configured for this method); you only send the amount,
+  country, and references.
+</p>
+<div class="alert alert-info small">
+  Two differences from a regular pay-out: no <code>payer</code>/<code>payee</code> object on
+  the request, and <code>reconciliationReference</code> is <strong>required</strong>
+  (optional everywhere else).
+</div>
+
+<div class="row">
+  <div class="col-lg-7">
+    <form method="post" action="/direct-tax-payout">
+      <div class="mb-3">
+        <label class="form-label">Method key</label>
+        <input class="form-control" name="method" value="<%= form.method %>" />
+      </div>
+      <h4>Amount</h4>
+      <div class="row g-2">
+        <div class="col">
+          <label class="form-label">Value</label>
+          <input class="form-control" name="value" type="number" step="0.01" value="<%= form.value %>" />
+        </div>
+        <div class="col">
+          <label class="form-label">Currency</label>
+          <input class="form-control" name="currency" value="<%= form.currency %>" />
+        </div>
+      </div>
+      <h4 class="mt-4">Routing</h4>
+      <div class="mb-2"><label class="form-label">Country</label>
+        <input class="form-control" name="country" value="<%= form.country %>" /></div>
+      <div class="mb-2"><label class="form-label">Result URL</label>
+        <input class="form-control" name="resultUrl" value="<%= form.resultUrl %>" /></div>
+      <div class="mb-2"><label class="form-label">Merchant reference</label>
+        <input class="form-control" name="merchantReference" value="<%= form.merchantReference %>" /></div>
+      <div class="mb-2"><label class="form-label">Reconciliation reference (required)</label>
+        <input class="form-control" name="reconciliationReference" value="<%= form.reconciliationReference %>" /></div>
+      <button class="btn btn-primary mt-3" type="submit">Initiate tax payout</button>
+    </form>
+  </div>
+
+  <div class="col-lg-5">
+    <%- include('_error', { error }) %>
+    <% if (response) { %>
+      <div class="alert alert-success">
+        <h5>Accepted — pending</h5>
+        <table class="table table-sm mb-0"><tbody>
+          <tr><th>gatewayReference</th><td><code><%= response.gatewayReference %></code></td></tr>
+          <tr><th>merchantReference</th><td><code><%= response.merchantReference %></code></td></tr>
+          <tr><th>reconciliationReference</th><td><code><%= response.reconciliationReference %></code></td></tr>
+          <tr><th>createdAt</th><td><%= new Date(response.createdAt).toLocaleString() %></td></tr>
+        </tbody></table>
+      </div>
+    <% } %>
+  </div>
+</div>
+
+<%- include('_footer') %>

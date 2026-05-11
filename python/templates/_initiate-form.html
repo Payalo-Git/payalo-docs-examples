@@ -1,0 +1,64 @@
+{# Reusable initiation form — shared by the 5 form pages. Required context:
+     title, description, action_url, submit_label, form, party_label,
+     show_party (default true), extra_fields (HTML), success_panel (HTML), response.
+#}
+<h1>{{ title }}</h1>
+{{ description|safe }}
+
+<div class="row">
+  <div class="col-lg-7">
+    <form method="post" action="{{ action_url }}">
+      <div class="mb-3">
+        <label class="form-label">Method key</label>
+        <input class="form-control" name="method" value="{{ form.method }}" />
+      </div>
+
+      <h4>Amount</h4>
+      <div class="row g-2">
+        <div class="col">
+          <label class="form-label">Value</label>
+          <input class="form-control" name="value" type="number" step="0.01" value="{{ form.value }}" />
+        </div>
+        <div class="col">
+          <label class="form-label">Currency</label>
+          <input class="form-control" name="currency" value="{{ form.currency }}" />
+        </div>
+      </div>
+
+      {% if show_party is not defined or show_party %}
+        <h4 class="mt-4">{{ party_label }}</h4>
+        <div class="mb-2">
+          <label class="form-label">User ID</label>
+          <input class="form-control" name="userId" value="{{ form.user_id }}" />
+        </div>
+        <div class="mb-2">
+          <label class="form-label">MSISDN</label>
+          <input class="form-control" name="msisdn" value="{{ form.msisdn }}" />
+        </div>
+      {% endif %}
+
+      <h4 class="mt-4">Routing</h4>
+      <div class="mb-2">
+        <label class="form-label">Country</label>
+        <input class="form-control" name="country" value="{{ form.country }}" />
+      </div>
+      <div class="mb-2">
+        <label class="form-label">Result URL</label>
+        <input class="form-control" name="resultUrl" value="{{ form.result_url }}" />
+      </div>
+      {% if extra_fields %}{{ extra_fields|safe }}{% endif %}
+      <div class="mb-2">
+        <label class="form-label">Merchant reference</label>
+        <input class="form-control" name="merchantReference" value="{{ form.merchant_reference }}" />
+        <div class="form-text">Auto-bumps after every submit so dupes are impossible.</div>
+      </div>
+
+      <button class="btn btn-primary mt-3" type="submit">{{ submit_label }}</button>
+    </form>
+  </div>
+
+  <div class="col-lg-5">
+    {% include "_error.html" %}
+    {% if response %}{{ success_panel|safe }}{% endif %}
+  </div>
+</div>

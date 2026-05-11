@@ -1,0 +1,75 @@
+<% const pageTitle = 'Status Lookup'; const currentPath = '/status'; %>
+<%- include('_layout', { pageTitle, currentPath }) %>
+
+<h1>Status Lookup</h1>
+<p>Two endpoints; same response shape. Useful as a fallback when callbacks are missed.</p>
+<div class="alert alert-info small">
+  Wait at least <strong>2 minutes</strong> between polls — the gateway only re-checks
+  the provider that often.
+</div>
+
+<div class="row g-3">
+  <div class="col-md-6">
+    <h4>By gateway reference</h4>
+    <p class="small text-muted mb-2"><code>GET /status/{gatewayReference}</code></p>
+    <form method="get" action="/status" class="input-group">
+      <input class="form-control" name="gw" value="<%= gw %>" placeholder="01J1ABCDEF123456" />
+      <button class="btn btn-primary" type="submit">Lookup</button>
+    </form>
+  </div>
+  <div class="col-md-6">
+    <h4>By merchant reference</h4>
+    <p class="small text-muted mb-2"><code>GET /status/mref/{merchantReference}</code></p>
+    <form method="get" action="/status" class="input-group">
+      <input class="form-control" name="mref" value="<%= mref %>" placeholder="dep-…" />
+      <button class="btn btn-primary" type="submit">Lookup</button>
+    </form>
+  </div>
+</div>
+
+<hr class="my-4" />
+
+<%- include('_error', { error }) %>
+
+<% if (transaction) { %>
+  <h3>
+    <%= transaction.type %> — <%= transaction.flow %>
+    <% const cls = { success: 'bg-success', failed: 'bg-danger', pending: 'bg-warning text-dark' }[transaction.status] || 'bg-secondary'; %>
+    <span class="badge <%= cls %>"><%= transaction.status %></span>
+  </h3>
+  <div class="row">
+    <div class="col-lg-6">
+      <table class="table table-sm">
+        <tbody>
+          <tr><th>gatewayReference</th><td><code><%= transaction.gatewayReference %></code></td></tr>
+          <tr><th>merchantReference</th><td><code><%= transaction.merchantReference || '—' %></code></td></tr>
+          <tr><th>providerReference</th><td><code><%= transaction.providerReference || '—' %></code></td></tr>
+          <tr><th>method / country</th><td><code><%= transaction.method %></code> / <%= transaction.country %></td></tr>
+          <tr><th>requested</th><td><%= transaction.requestedAmount.value.toFixed(2) %> <%= transaction.requestedAmount.currency %></td></tr>
+          <tr><th>final</th><td>
+            <% if (transaction.finalAmount) { %><%= transaction.finalAmount.value.toFixed(2) %> <%= transaction.finalAmount.currency %>
+            <% } else { %><em class="text-muted">not settled</em><% } %>
+          </td></tr>
+          <tr><th>createdAt</th><td><%= new Date(transaction.createdAt).toLocaleString() %></td></tr>
+          <tr><th>completedAt</th><td><%= transaction.completedAt ? new Date(transaction.completedAt).toLocaleString() : '—' %></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="col-lg-6">
+      <% if (transaction.status === 'failed' && transaction.errorCode) { %>
+        <div class="alert alert-danger">
+          <h5 class="mb-1">Failed <span class="badge bg-danger ms-2"><%= transaction.errorCode %></span></h5>
+          <strong><%= transaction.errorMessage || '' %></strong>
+          <hr />
+          <small><%= friendly(transaction.errorCode, transaction.errorMessage) %></small>
+        </div>
+      <% } else if (transaction.status === 'pending') { %>
+        <div class="alert alert-warning">Still processing — wait a couple of minutes and re-lookup.</div>
+      <% } else if (transaction.status === 'success') { %>
+        <div class="alert alert-success">Transaction settled successfully.</div>
+      <% } %>
+    </div>
+  </div>
+<% } %>
+
+<%- include('_footer') %>

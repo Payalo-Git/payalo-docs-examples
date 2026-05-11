@@ -1,0 +1,36 @@
+{% extends "layout.html" %}
+{% block title %}Direct Pay-In — Payalo Python Sample{% endblock %}
+{% block content %}
+
+{% set description %}
+<p><code>POST /direct/payin/{method}</code> — server-to-server deposit. The end user receives
+an STK push (or equivalent) on their phone and approves the payment in their mobile money app.</p>
+<div class="alert alert-info small">
+  The gateway returns 200 OK with status <em>pending</em> immediately. The actual outcome
+  is delivered later as a webhook to <code>resultUrl</code> — watch the
+  <a href="/webhooks">Webhooks</a> page.
+</div>
+{% endset %}
+
+{% set success_panel %}
+{% if response %}
+<div class="alert alert-success">
+  <h5>Accepted — pending</h5>
+  <table class="table table-sm mb-0"><tbody>
+    <tr><th>gatewayReference</th><td><code>{{ response.gateway_reference }}</code></td></tr>
+    <tr><th>merchantReference</th><td><code>{{ response.merchant_reference }}</code></td></tr>
+    <tr><th>createdAt</th><td>{{ response.created_at }}</td></tr>
+  </tbody></table>
+  <p class="small mt-2 mb-0">📡 Watch <a href="/webhooks">/webhooks</a> for the terminal callback,
+  or <a href="/status?gw={{ response.gateway_reference }}">look up the status</a>.</p>
+</div>
+{% endif %}
+{% endset %}
+
+{% include "_initiate-form.html" with context %}
+{% endblock %}
+
+{% set title = "Direct Pay-In" %}
+{% set action_url = "/direct-payin" %}
+{% set submit_label = "Initiate pay-in" %}
+{% set party_label = "Payer" %}

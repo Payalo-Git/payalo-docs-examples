@@ -1,0 +1,44 @@
+<% const pageTitle = 'Web Pay-In (HPP)'; const currentPath = '/web-payin'; %>
+<%- include('_layout', { pageTitle, currentPath }) %>
+
+<%
+const description = `<p><code>POST /web/payin/{method}</code> — gateway returns a hosted
+payment page URL. Redirect the end user to <code>pageUrl</code>; the gateway redirects them
+back to your success or error URL when done.</p>
+<div class="alert alert-warning small">
+  <strong>Source of truth.</strong> The post-payment redirect is for UX only. Always rely on
+  the webhook callback to <code>resultUrl</code> for the authoritative status.
+</div>`;
+
+const extraFields = `
+  <div class="row g-2">
+    <div class="col">
+      <label class="form-label">Success redirect URL</label>
+      <input class="form-control" name="successRedirectUrl" value="${form.successRedirectUrl}" />
+    </div>
+    <div class="col">
+      <label class="form-label">Error redirect URL</label>
+      <input class="form-control" name="errorRedirectUrl" value="${form.errorRedirectUrl}" />
+    </div>
+  </div>`;
+
+const successPanel = response ? `
+  <div class="alert alert-success">
+    <h5>Accepted — redirect to the hosted page</h5>
+    <p class="mb-2"><strong>pageUrl:</strong> <a href="${response.pageUrl}" target="_blank" rel="noopener">${response.pageUrl}</a></p>
+    <a class="btn btn-primary btn-sm" href="${response.pageUrl}" target="_blank" rel="noopener">Open payment page →</a>
+    <p class="small mt-2 mb-0 text-muted">📡 Watch <a href="/webhooks">/webhooks</a> for the terminal callback — that's the authoritative status.</p>
+  </div>` : '';
+%>
+
+<%- include('_initiate-form', {
+  title: 'Web Pay-In (HPP)',
+  description,
+  actionUrl: '/web-payin',
+  submitLabel: 'Get payment page',
+  form, response, error, successPanel,
+  partyLabel: 'Payer',
+  extraFields,
+}) %>
+
+<%- include('_footer') %>

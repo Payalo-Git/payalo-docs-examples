@@ -1,0 +1,36 @@
+<% const pageTitle = 'Direct Pay-In'; const currentPath = '/direct-payin'; %>
+<%- include('_layout', { pageTitle, currentPath }) %>
+
+<%
+const description = `<p><code>POST /direct/payin/{method}</code> — server-to-server deposit.
+The end user receives an STK push (or equivalent) on their phone and approves the
+payment in their mobile money app.</p>
+<div class="alert alert-info small">
+  The gateway returns 200 OK with status <em>pending</em> immediately. The actual outcome
+  is delivered later as a webhook to <code>resultUrl</code> — watch the
+  <a href="/webhooks">Webhooks</a> page.
+</div>`;
+
+const successPanel = response ? `
+  <div class="alert alert-success">
+    <h5>Accepted — pending</h5>
+    <table class="table table-sm mb-0"><tbody>
+      <tr><th>gatewayReference</th><td><code>${response.gatewayReference}</code></td></tr>
+      <tr><th>merchantReference</th><td><code>${response.merchantReference}</code></td></tr>
+      <tr><th>createdAt</th><td>${new Date(response.createdAt).toLocaleString()}</td></tr>
+    </tbody></table>
+    <p class="small mt-2 mb-0">📡 Watch <a href="/webhooks">/webhooks</a> for the terminal callback,
+    or <a href="/status?gw=${encodeURIComponent(response.gatewayReference)}">look up the status</a>.</p>
+  </div>` : '';
+%>
+
+<%- include('_initiate-form', {
+  title: 'Direct Pay-In',
+  description,
+  actionUrl: '/direct-payin',
+  submitLabel: 'Initiate pay-in',
+  form, response, error, successPanel,
+  partyLabel: 'Payer',
+}) %>
+
+<%- include('_footer') %>

@@ -1,0 +1,17 @@
+# Keep the build context small and avoid leaking dev artefacts into the image.
+**/bin
+**/obj
+**/.vs
+**/.idea
+**/.vscode
+**/.git
+**/.gitignore
+**/.dockerignore
+**/Dockerfile
+**/docker-compose*.yml
+**/*.user
+**/.env
+**/.env.*
+**/secrets.json
+**/appsettings.Development.json
+README.md
