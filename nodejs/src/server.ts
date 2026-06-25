@@ -12,6 +12,9 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const client = new PayaloClient();
 
 const app = express();
+// Make the HTML-escaper available to every EJS view. Used when interpolating user input
+// into the raw-HTML `extraFields` blobs that the form partial emits unescaped via <%- %>.
+app.locals.escapeHtml = escapeHtml;
 app.set("view engine", "ejs");
 app.set("views", path.resolve(__dirname, "..", "views"));
 app.use(express.urlencoded({ extended: false }));
@@ -104,6 +107,7 @@ app.post("/web-payin", async (req, res) => {
       resultUrl: form.resultUrl,
       successRedirectUrl: form.successRedirectUrl || null,
       errorRedirectUrl: form.errorRedirectUrl || null,
+      preferredLanguage: form.preferredLanguage || null,
       merchantReference: form.merchantReference,
     });
     res.render("web-payin", { form: { ...form, merchantReference: newMerchantRef("web") }, response, error: null });
@@ -316,6 +320,7 @@ function defaultWebPayIn() {
     resultUrl: resultUrl(),
     successRedirectUrl: `${publicBase}/payment/success`,
     errorRedirectUrl: `${publicBase}/payment/error`,
+    preferredLanguage: "fr-FR",
     merchantReference: newMerchantRef("web"),
   };
 }
@@ -324,6 +329,7 @@ function readWebPayIn(req: Request) {
     ...readDirectPayIn(req),
     successRedirectUrl: String(req.body.successRedirectUrl ?? "").trim(),
     errorRedirectUrl: String(req.body.errorRedirectUrl ?? "").trim(),
+    preferredLanguage: String(req.body.preferredLanguage ?? "").trim(),
   };
 }
 
@@ -386,6 +392,14 @@ function readRecordFilters(req: Request) {
     // First load (no `searched` flag) shows just the filter form. Click Search to query.
     searched: req.query.searched === "1" || !!req.query.page,
   };
+}
+
+// HTML-escape a value before interpolating it into a raw HTML string (e.g. the
+// `extraFields` markup the form partial emits unescaped via <%- %>). Guards against
+// reflected XSS from user-supplied form values.
+function escapeHtml(value: unknown): string {
+  const map: Record<string, string> = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" };
+  return String(value ?? "").replace(/[&<>"']/g, (c) => map[c] ?? c);
 }
 
 app.listen(config.port, () => {

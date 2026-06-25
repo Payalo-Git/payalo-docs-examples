@@ -73,6 +73,12 @@
                 </div>
             </div>
             <div class="mt-2">
+                <label class="form-label">Preferred language</label>
+                <InputText class="form-control" @bind-Value="_request.PreferredLanguage" placeholder="e.g. fr-FR" />
+                <div class="form-text">Optional BCP-47 language-REGION tag; unknown values fall back to English.</div>
+            </div>
+
+            <div class="mt-2">
                 <label class="form-label">Merchant reference</label>
                 <InputText class="form-control" @bind-Value="_request.MerchantReference" />
             </div>
@@ -133,6 +139,7 @@
         _request.ResultUrl = $"{publicBase}{options.WebhookPath}";
         _request.SuccessRedirectUrl = $"{publicBase}/payment/success";
         _request.ErrorRedirectUrl = $"{publicBase}/payment/error";
+        _request.PreferredLanguage = "fr-FR";
     }
 
     private async Task SubmitAsync()

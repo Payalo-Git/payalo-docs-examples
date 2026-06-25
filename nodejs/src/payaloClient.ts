@@ -27,6 +27,7 @@ export interface PayInRequest {
   merchantReference: string;
   reconciliationReference?: string | null;
   labels?: Record<string, string>;
+  preferredLanguage?: string | null;
 }
 
 export interface PayOutRequest {
@@ -37,6 +38,7 @@ export interface PayOutRequest {
   merchantReference: string;
   reconciliationReference?: string | null;
   labels?: Record<string, string>;
+  preferredLanguage?: string | null;
 }
 
 export interface WebPayInRequest extends PayInRequest {

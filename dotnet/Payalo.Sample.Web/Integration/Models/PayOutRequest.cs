@@ -28,4 +28,8 @@ public sealed class PayOutRequest
     public string? ReconciliationReference { get; set; }
 
     public Dictionary<string, string>? Labels { get; set; }
+
+    // Optional BCP-47 `language-REGION` tag (e.g. "fr-FR") that sets the hosted/redirection
+    // page language. An unrecognised or language-only value falls back to English server-side.
+    public string? PreferredLanguage { get; set; }
 }

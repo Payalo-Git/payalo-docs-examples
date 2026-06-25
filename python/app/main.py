@@ -209,6 +209,7 @@ async def web_payin_submit(
     resultUrl: str = Form(...),
     successRedirectUrl: str = Form(""),
     errorRedirectUrl: str = Form(""),
+    preferredLanguage: str = Form(""),
     merchantReference: str = Form(...),
 ) -> HTMLResponse:
     body = WebPayInRequest(
@@ -218,6 +219,7 @@ async def web_payin_submit(
         result_url=resultUrl,
         success_redirect_url=successRedirectUrl or None,
         error_redirect_url=errorRedirectUrl or None,
+        preferred_language=preferredLanguage or None,
         merchant_reference=merchantReference,
     )
     return await _submit(
@@ -227,6 +229,7 @@ async def web_payin_submit(
             "method": method, "value": value, "currency": currency, "user_id": userId,
             "msisdn": msisdn, "country": country, "result_url": resultUrl,
             "success_redirect_url": successRedirectUrl, "error_redirect_url": errorRedirectUrl,
+            "preferred_language": preferredLanguage,
         },
     )
 
@@ -471,6 +474,7 @@ def _default_web_payin() -> dict[str, Any]:
         "msisdn": "+491234567890",
         "success_redirect_url": f"{base}/payment/success",
         "error_redirect_url": f"{base}/payment/error",
+        "preferred_language": "fr-FR",
     }
 
 

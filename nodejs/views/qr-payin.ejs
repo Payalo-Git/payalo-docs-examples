@@ -13,7 +13,7 @@ responsible for rendering the QR for the end user to scan.</p>
 const extraFields = `
   <div class="mb-2">
     <label class="form-label">Display QR URL</label>
-    <input class="form-control" name="displayQrUrl" value="${form.displayQrUrl}" />
+    <input class="form-control" name="displayQrUrl" value="${escapeHtml(form.displayQrUrl)}" />
   </div>`;
 
 const successPanel = response ? `

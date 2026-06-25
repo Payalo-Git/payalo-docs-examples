@@ -61,6 +61,7 @@ class PayInRequest(_CamelOut):
     merchant_reference: str
     reconciliation_reference: str | None = None
     labels: dict[str, str] | None = None
+    preferred_language: str | None = None
 
 
 class PayOutRequest(_CamelOut):
@@ -71,6 +72,7 @@ class PayOutRequest(_CamelOut):
     merchant_reference: str
     reconciliation_reference: str | None = None
     labels: dict[str, str] | None = None
+    preferred_language: str | None = None
 
 
 class WebPayInRequest(PayInRequest):
