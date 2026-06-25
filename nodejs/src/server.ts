@@ -105,9 +105,9 @@ app.post("/web-payin", async (req, res) => {
       payer: { id: form.userId, msisdn: form.msisdn },
       country: form.country,
       resultUrl: form.resultUrl,
-      successRedirectUrl: form.successRedirectUrl || null,
-      errorRedirectUrl: form.errorRedirectUrl || null,
-      preferredLanguage: form.preferredLanguage || null,
+      successRedirectUrl: form.successRedirectUrl || undefined,
+      errorRedirectUrl: form.errorRedirectUrl || undefined,
+      preferredLanguage: form.preferredLanguage || undefined,
       merchantReference: form.merchantReference,
     });
     res.render("web-payin", { form: { ...form, merchantReference: newMerchantRef("web") }, response, error: null });
