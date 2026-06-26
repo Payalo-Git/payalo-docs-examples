@@ -34,6 +34,7 @@ internal sealed class PayInWebCommand
             ReconciliationReference = common.ReconciliationReference,
             SuccessRedirectUrl      = args.Get("--success-url"),
             ErrorRedirectUrl        = args.Get("--error-url"),
+            PreferredLanguage       = args.Get("--preferred-language"),
         };
 
         Output.Info($"Submitting via method '{common.Method}'…");

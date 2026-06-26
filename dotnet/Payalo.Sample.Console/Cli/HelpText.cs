@@ -107,6 +107,7 @@ public static class HelpText
         {{PartyOptions}}
             --success-url           Browser redirect on success (optional)
             --error-url             Browser redirect on error (optional)
+            --preferred-language    Hosted-page language, BCP-47 tag e.g. fr-FR (optional)
         """;
 
     private const string QrPayIn =

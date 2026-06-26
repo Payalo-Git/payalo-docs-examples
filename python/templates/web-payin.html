@@ -28,6 +28,11 @@ success or error URL when done.</p>
     <input class="form-control" name="errorRedirectUrl" value="{{ form.error_redirect_url }}" />
   </div>
 </div>
+<div class="mb-2 mt-2">
+  <label class="form-label">Preferred language</label>
+  <input class="form-control" name="preferredLanguage" value="{{ form.preferred_language }}" placeholder="e.g. fr-FR" />
+  <div class="form-text">Optional BCP-47 language-REGION tag; unknown values fall back to English.</div>
+</div>
 {% endset %}
 
 {% set success_panel %}

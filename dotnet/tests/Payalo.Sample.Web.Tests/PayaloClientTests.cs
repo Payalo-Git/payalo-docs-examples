@@ -1,4 +1,5 @@
 using System.Net;
+using System.Text.Json;
 using Payalo.Sample.Web.Integration;
 using Payalo.Sample.Web.Integration.Models;
 using WireMock.RequestBuilders;
@@ -7,9 +8,9 @@ using WireMock.Server;
 
 namespace Payalo.Sample.Web.Tests;
 
-// One happy-path test, one error-path test. Enough to demonstrate the pattern; the
-// consumer can grow the suite from here. We talk to a WireMock fake gateway rather
-// than the real one so the test is hermetic.
+// Happy-path, error-path, and web pay-in request-serialization tests. Enough to
+// demonstrate the pattern; the consumer can grow the suite from here. We talk to a
+// WireMock fake gateway rather than the real one so the test is hermetic.
 public sealed class PayaloClientTests : IDisposable
 {
     private readonly WireMockServer _gateway = WireMockServer.Start();
@@ -82,6 +83,30 @@ public sealed class PayaloClientTests : IDisposable
         Assert.False(ex.IsRetryable);
     }
 
+    [Fact]
+    public async Task WebPayIn_SendsPreferredLanguageAsCamelCase_WhenProvided()
+    {
+        StubWebPayInOk();
+
+        await _client.CreateWebPayInAsync("card-eu", BuildWebPayInRequest("fr-FR"));
+
+        using var body = JsonDocument.Parse(CapturedRequestBody());
+        Assert.Equal("fr-FR", body.RootElement.GetProperty("preferredLanguage").GetString());
+    }
+
+    [Fact]
+    public async Task WebPayIn_OmitsPreferredLanguage_WhenNull()
+    {
+        StubWebPayInOk();
+
+        await _client.CreateWebPayInAsync("card-eu", BuildWebPayInRequest(preferredLanguage: null));
+
+        using var body = JsonDocument.Parse(CapturedRequestBody());
+        Assert.False(
+            body.RootElement.TryGetProperty("preferredLanguage", out _),
+            "preferredLanguage must be omitted from the request body when null.");
+    }
+
     private static PayInRequest BuildPayInRequest() => new()
     {
         Amount = new MoneyDto { Value = 500m, Currency = "KES" },
@@ -90,4 +115,36 @@ public sealed class PayaloClientTests : IDisposable
         ResultUrl = "https://merchant.example.com/webhooks/payalo",
         MerchantReference = "dep-test",
     };
+
+    private static WebPayInRequest BuildWebPayInRequest(string? preferredLanguage) => new()
+    {
+        Amount = new MoneyDto { Value = 25m, Currency = "EUR" },
+        Payer = new MsisdnPartyDto { Id = "user-42", Msisdn = "+491234567890" },
+        Country = "DE",
+        ResultUrl = "https://merchant.example.com/webhooks/payalo",
+        MerchantReference = "web-test-1",
+        PreferredLanguage = preferredLanguage,
+    };
+
+    private void StubWebPayInOk() =>
+        _gateway
+            .Given(Request.Create().WithPath("/web/payin/card-eu").UsingPost())
+            .RespondWith(Response.Create()
+                .WithStatusCode(200)
+                .WithHeader("Content-Type", "application/json")
+                .WithBody("""
+                    {
+                      "status": "pending",
+                      "gatewayReference": "01J1WEBPAYIN0001",
+                      "merchantReference": "web-test-1",
+                      "reconciliationReference": "web-test-1",
+                      "createdAt": "2026-04-28T10:00:00+00:00",
+                      "pageUrl": "https://hpp.payalo.com/pay/session-xyz",
+                      "pageOpenMode": "redirect"
+                    }
+                    """));
+
+    private string CapturedRequestBody() =>
+        _gateway.LogEntries.Single().RequestMessage?.Body
+            ?? throw new InvalidOperationException("No request body was captured.");
 }
