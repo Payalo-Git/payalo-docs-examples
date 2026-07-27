@@ -48,6 +48,7 @@ _MESSAGES: dict[str, str] = {
     # Merchant-side failures.
     "merchant_disabled": "The brand has been disabled. Contact your account manager.",
     "merchant_insufficient_funds": "The merchant float used for pay-outs has insufficient balance.",
+    "merchant_account_overflow": "The merchant's provider account has reached its allowed balance limit, so the deposit was rejected.",
     "merchant_limit_exceeded": "The merchant has hit a configured limit.",
     "merchant_invalid_credentials": "The merchant credentials at the provider are invalid.",
     "merchant_cancelled_by_risk": "A risk rule cancelled this transaction.",
@@ -57,6 +58,7 @@ _MESSAGES: dict[str, str] = {
     # Gateway and lifecycle.
     "transaction_expired": "The gateway-side timeout fired. The transaction was auto-marked failed.",
     "transaction_not_found": "Status lookup failed because the transaction does not exist for this brand.",
+    "transaction_another_in_progress": "The transaction was rejected because another transaction is being processed.",
     "gateway_too_many_requests": "The gateway rate-limited the request. Back off and retry.",
     "hpp_open_timeout": "The hosted payment page session was created but never opened in time.",
 
