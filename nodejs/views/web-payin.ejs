@@ -24,7 +24,7 @@ const extraFields = `
   <div class="mb-2 mt-2">
     <label class="form-label">Preferred language</label>
     <input class="form-control" name="preferredLanguage" value="${escapeHtml(form.preferredLanguage)}" placeholder="e.g. fr-FR" />
-    <div class="form-text">Optional BCP-47 language-REGION tag; unknown values fall back to English.</div>
+    <div class="form-text">Optional BCP-47 language tag, e.g. fr-FR or fr. Leave blank for English &mdash; an unrecognised tag is rejected with 400 invalid_language_code.</div>
   </div>`;
 
 const successPanel = response ? `
