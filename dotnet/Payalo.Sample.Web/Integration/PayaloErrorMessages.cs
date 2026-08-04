@@ -69,6 +69,7 @@ public static class PayaloErrorMessages
 
         // Synchronous (request-time) error codes — see docs §5 Error Handling.
         ["validation_failed"]      = "One or more fields failed validation. Check the detail message.",
+        ["invalid_language_code"]  = "`preferredLanguage` is not a recognised language tag. Send a BCP-47 tag such as fr-FR, or omit the field for English.",
         ["bad_request"]            = "The request body is malformed.",
         ["unauthorized"]           = "API key is missing or invalid.",
         ["not_found"]              = "Resource not found.",
