@@ -30,7 +30,8 @@ public sealed class PayInRequest
 
     public Dictionary<string, string>? Labels { get; set; }
 
-    // Optional BCP-47 `language-REGION` tag (e.g. "fr-FR") that sets the hosted/redirection
-    // page language. An unrecognised or language-only value falls back to English server-side.
+    // Optional BCP-47 language tag (e.g. "fr-FR", or language-only "fr") that sets the
+    // hosted/redirection page language. Omit it for English; an unrecognised tag is
+    // rejected server-side with 400 invalid_language_code.
     public string? PreferredLanguage { get; set; }
 }

@@ -51,6 +51,7 @@ public static class PayaloErrorMessages
         // Merchant-side failures.
         ["merchant_disabled"]                  = "The brand has been disabled. Contact your account manager.",
         ["merchant_insufficient_funds"]        = "The merchant float used for pay-outs has insufficient balance.",
+        ["merchant_account_overflow"]          = "The merchant's provider account has reached its allowed balance limit, so the deposit was rejected.",
         ["merchant_limit_exceeded"]            = "The merchant has hit a configured limit.",
         ["merchant_invalid_credentials"]       = "The merchant credentials at the provider are invalid.",
         ["merchant_cancelled_by_risk"]         = "A risk rule cancelled this transaction.",
@@ -60,11 +61,13 @@ public static class PayaloErrorMessages
         // Gateway and lifecycle.
         ["transaction_expired"]                = "The gateway-side timeout fired. The transaction was auto-marked failed.",
         ["transaction_not_found"]              = "Status lookup failed because the transaction does not exist for this brand.",
+        ["transaction_another_in_progress"]    = "The transaction was rejected because another transaction is being processed.",
         ["gateway_too_many_requests"]          = "The gateway rate-limited the request. Back off and retry.",
         ["hpp_open_timeout"]                   = "The hosted payment page session was created but never opened in time.",
 
         // Synchronous (request-time) error codes.
         ["validation_failed"]      = "One or more fields failed validation. Check the detail message.",
+        ["invalid_language_code"]  = "`preferredLanguage` is not a recognised language tag. Send a BCP-47 tag such as fr-FR, or omit the field for English.",
         ["bad_request"]            = "The request body is malformed.",
         ["unauthorized"]           = "API key is missing or invalid.",
         ["not_found"]              = "Resource not found.",

@@ -75,7 +75,7 @@
             <div class="mt-2">
                 <label class="form-label">Preferred language</label>
                 <InputText class="form-control" @bind-Value="_request.PreferredLanguage" placeholder="e.g. fr-FR" />
-                <div class="form-text">Optional BCP-47 language-REGION tag; unknown values fall back to English.</div>
+                <div class="form-text">Optional BCP-47 language tag, e.g. fr-FR or fr. Leave blank for English &mdash; an unrecognised tag is rejected with 400 invalid_language_code.</div>
             </div>
 
             <div class="mt-2">
