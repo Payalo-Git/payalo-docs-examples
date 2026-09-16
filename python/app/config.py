@@ -14,7 +14,7 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
-    base_url: str = "https://dev-api-internal.payalo.com/gateway/mmo/v2/"
+    base_url: str = "https://api.payalo.com/gateway/mmo/v2/"
     api_key: str = ""
     webhook_path: str = "/webhooks/payalo"
     public_base_url: str = ""

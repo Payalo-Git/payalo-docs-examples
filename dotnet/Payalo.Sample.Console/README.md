@@ -35,7 +35,7 @@ dotnet run -- payin-direct --help          # see all flags for a command
 
 | Key | Required | Default |
 |---|---|---|
-| `Payalo:BaseUrl` | yes | `https://dev-api-internal.payalo.com/gateway/mmo/v2/` |
+| `Payalo:BaseUrl` | yes | `https://api.payalo.com/gateway/mmo/v2/` |
 | `Payalo:ApiKey` | yes | *(unset)* |
 | `Payalo:DefaultResultUrl` | recommended | `https://example.com/webhooks/payalo` |
 

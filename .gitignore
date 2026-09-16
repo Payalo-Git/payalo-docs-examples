@@ -8,6 +8,7 @@
 .idea/
 .vs/
 .vscode/
+.claude/
 
 # Local secrets / env
 .env

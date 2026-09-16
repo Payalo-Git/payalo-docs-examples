@@ -7,7 +7,7 @@ public sealed class PayaloOptions
 {
     public const string SectionName = "Payalo";
 
-    // Base URL of the Merchant Gateway v2, e.g. https://dev-api-internal.payalo.com/gateway/mmo/v2
+    // Base URL of the Merchant Gateway v2, e.g. https://api.payalo.com/gateway/mmo/v2
     public string BaseUrl { get; set; } = "";
 
     // Your brand API key. Sent as the X-Api-Key header on every outbound request.

@@ -11,7 +11,7 @@ export interface PayaloConfig {
 }
 
 export const config: PayaloConfig = {
-  baseUrl: process.env.PAYALO_BASE_URL ?? "https://dev-api-internal.payalo.com/gateway/mmo/v2/",
+  baseUrl: process.env.PAYALO_BASE_URL ?? "https://api.payalo.com/gateway/mmo/v2/",
   apiKey: process.env.PAYALO_API_KEY ?? "",
   webhookPath: process.env.PAYALO_WEBHOOK_PATH ?? "/webhooks/payalo",
   publicBaseUrl: process.env.PAYALO_PUBLIC_BASE_URL ?? "",
