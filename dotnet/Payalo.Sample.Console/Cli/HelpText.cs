@@ -28,7 +28,7 @@ public static class HelpText
             not supplied via flags will be prompted interactively (when stdin is a TTY).
 
             Configuration (Payalo:* keys):
-              BaseUrl           Gateway base URL (defaults to dev environment)
+              BaseUrl           Gateway base URL (defaults to the production API)
               ApiKey            Brand API key (required)
               DefaultResultUrl  resultUrl populated on submit when --result-url is omitted
 

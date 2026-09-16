@@ -32,7 +32,7 @@ Open <http://localhost:8000>.
 | Env var | Required | Default |
 |---|---|---|
 | `PAYALO_API_KEY` | yes | *(unset)* |
-| `PAYALO_BASE_URL` | no | `https://dev-api-internal.payalo.com/gateway/mmo/v2/` |
+| `PAYALO_BASE_URL` | no | `https://api.payalo.com/gateway/mmo/v2/` |
 | `PAYALO_WEBHOOK_PATH` | no | `/webhooks/payalo` |
 | `PAYALO_PUBLIC_BASE_URL` | recommended | *(unset)* — your public tunnel URL |
 | `PORT` | no | `8000` |
