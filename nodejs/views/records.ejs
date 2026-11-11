@@ -4,8 +4,8 @@
 <h1>Records (bulk reconciliation)</h1>
 <p><code>GET /records</code> — paged window of transactions for catching up after a callback outage or running a daily reconciliation.</p>
 <div class="alert alert-info small">
-  Cursor pagination encodes the original filters, so on follow-up pages we send only the
-  cursor. Editing the filter form after a search resets to page 1 with the new filters.
+  A page cursor is only valid for the same query, so every call repeats <code>from</code>,
+  <code>to</code> and the filters. Editing the filter form after a search resets to page 1.
 </div>
 
 <form method="get" action="/records">
@@ -52,6 +52,7 @@
 <hr class="my-4" />
 
 <%- include('_error', { error }) %>
+<% const pageLink = (cursor) => '/records?' + new URLSearchParams({ searched: '1', from: filters.from, to: filters.to, type: filters.type, method: filters.method, status: filters.status, pageSize: String(filters.pageSize), page: cursor }).toString(); %>
 
 <% if (page) { %>
   <% if (!page.data.length) { %>
@@ -65,7 +66,7 @@
             <td><%= new Date(tx.createdAt).toLocaleString() %></td>
             <td><small><%= tx.type %> / <%= tx.flow %></small></td>
             <td><code><%= tx.method %></code></td>
-            <td><%= tx.requestedAmount.value.toFixed(2) %> <%= tx.requestedAmount.currency %></td>
+            <td><%= tx.requestedAmount ? tx.requestedAmount.value.toFixed(2) + ' ' + tx.requestedAmount.currency : '—' %></td>
             <td><a href="/status?gw=<%= encodeURIComponent(tx.gatewayReference) %>"><code><%= tx.gatewayReference %></code></a></td>
             <td><code><%= tx.merchantReference || '—' %></code></td>
             <% const cls = { success: 'bg-success', failed: 'bg-danger', pending: 'bg-warning text-dark' }[tx.status] || 'bg-secondary'; %>
@@ -81,13 +82,13 @@
     </table>
     <div class="d-flex justify-content-between mt-3">
       <% if (page.pages.previous) { %>
-        <a class="btn btn-outline-secondary" href="/records?page=<%= encodeURIComponent(page.pages.previous) %>">← Previous</a>
+        <a class="btn btn-outline-secondary" href="<%= pageLink(page.pages.previous) %>">← Previous</a>
       <% } else { %>
         <button class="btn btn-outline-secondary" disabled>← Previous</button>
       <% } %>
       <small class="text-muted align-self-center"><%= page.data.length %> records on this page.</small>
       <% if (page.pages.next) { %>
-        <a class="btn btn-outline-secondary" href="/records?page=<%= encodeURIComponent(page.pages.next) %>">Next →</a>
+        <a class="btn btn-outline-secondary" href="<%= pageLink(page.pages.next) %>">Next →</a>
       <% } else { %>
         <button class="btn btn-outline-secondary" disabled>Next →</button>
       <% } %>

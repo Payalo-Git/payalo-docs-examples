@@ -6,7 +6,7 @@ namespace Payalo.Sample.Web.Services;
 // In-memory log of received gateway callbacks. DEMO ONLY — wipes on restart.
 //
 // A production integration writes each entry to a database keyed on the gateway
-// `gatewayReference` so callbacks are durable, dedupable across replicas, and
+// `gatewayReference` and `status` so callbacks are durable, dedupable across replicas, and
 // reconcilable via /records.
 public sealed class WebhookStore
 {
@@ -19,18 +19,19 @@ public sealed class WebhookStore
     public event Action? Changed;
 
     // Atomic insert-if-absent. Returns true when newly stored, false on duplicate.
-    // The `gatewayReference` field is the gateway-assigned transaction identifier and
-    // is the recommended deduplication key per the v2 callbacks docs.
+    // The deduplication key is `gatewayReference` + `status` per the v2 callbacks docs: an
+    // operator can change a final status, and that sends another callback for the same payment.
     public bool TryRecord(MmoTransactionDto payload, string rawBody, string sourceIp)
     {
         if (string.IsNullOrWhiteSpace(payload.GatewayReference)) return false;
 
+        var key = $"{payload.GatewayReference}|{payload.Status}";
         var entry = new WebhookEntry(DateTimeOffset.UtcNow, sourceIp, payload, rawBody);
-        if (!_byReference.TryAdd(payload.GatewayReference, entry)) return false;
+        if (!_byReference.TryAdd(key, entry)) return false;
 
         lock (_orderLock)
         {
-            _insertionOrder.AddFirst(payload.GatewayReference);
+            _insertionOrder.AddFirst(key);
             while (_insertionOrder.Count > MaxEntries)
             {
                 var oldest = _insertionOrder.Last!.Value;

@@ -30,7 +30,7 @@ function renderError(res: Response, page: string, locals: Record<string, unknown
       title: error.title,
       detail: error.detail ?? error.message,
       errorCode: error.errorCode,
-      friendly: describeError(error.errorCode, "Check the request body and try again."),
+      friendly: describeError(error.specificCode, describeError(error.errorCode, "Check the request body and try again.")),
       isRetryable: error.isRetryable,
       traceId: error.traceId,
     },
@@ -40,6 +40,9 @@ function renderError(res: Response, page: string, locals: Record<string, unknown
 // Friendly heads-up if the API key is missing — surfaces in the home page table too.
 if (!config.apiKey) {
   console.warn("PAYALO_API_KEY is not set — every gateway call will 401. See README §TL;DR.");
+}
+if (!config.publicBaseUrl) {
+  console.warn("PAYALO_PUBLIC_BASE_URL is not set — callbacks will go to https://example.com and be lost.");
 }
 
 // ----------------------------------------------------------------------------------
@@ -250,8 +253,8 @@ app.get("/records", async (req, res) => {
   }
   try {
     const page = await client.getRecords({
-      from: new Date(filters.from),
-      to: new Date(filters.to),
+      from: new Date(`${filters.from}Z`),
+      to: new Date(`${filters.to}Z`),
       type: filters.type || undefined,
       method: filters.method || undefined,
       status: filters.status || undefined,
@@ -318,8 +321,8 @@ function defaultWebPayIn() {
     msisdn: "+491234567890",
     country: "DE",
     resultUrl: resultUrl(),
-    successRedirectUrl: `${publicBase}/payment/success`,
-    errorRedirectUrl: `${publicBase}/payment/error`,
+    successRedirectUrl: `${publicBase}/status`,
+    errorRedirectUrl: `${publicBase}/status`,
     preferredLanguage: "fr-FR",
     merchantReference: newMerchantRef("web"),
   };
@@ -344,7 +347,7 @@ function defaultQrPayIn() {
   const publicBase = config.publicBaseUrl ? config.publicBaseUrl.replace(/\/$/, "") : "https://example.com";
   return {
     ...defaultDirectPayIn(),
-    displayQrUrl: `${publicBase}/qr/render`,
+    displayQrUrl: `${publicBase}${config.webhookPath}/qr`,
     merchantReference: newMerchantRef("qr"),
   };
 }

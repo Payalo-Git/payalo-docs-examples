@@ -41,6 +41,8 @@ async def lifespan(app: FastAPI):
     """Build/teardown the shared httpx.AsyncClient that powers the typed PayaloClient."""
     if not settings.api_key:
         log.warning("PAYALO_API_KEY is not set — every gateway call will 401. See README §TL;DR.")
+    if not settings.public_base_url:
+        log.warning("PAYALO_PUBLIC_BASE_URL is not set — callbacks and QR data will go to https://example.com and be lost.")
     http = build_async_client()
     app.state.client = PayaloClient(http)
     try:
@@ -65,7 +67,10 @@ def _render_error(error: PayaloApiError) -> dict[str, Any]:
         "title": error.title,
         "detail": error.detail or str(error),
         "error_code": error.error_code,
-        "friendly": describe(error.error_code, "Check the request body and try again."),
+        "friendly": describe(
+            error.specific_code,
+            describe(error.error_code, "Check the request body and try again."),
+        ),
         "is_retryable": error.is_retryable,
         "trace_id": error.trace_id,
     }
@@ -472,15 +477,15 @@ def _default_web_payin() -> dict[str, Any]:
         "currency": "EUR",
         "country": "DE",
         "msisdn": "+491234567890",
-        "success_redirect_url": f"{base}/payment/success",
-        "error_redirect_url": f"{base}/payment/error",
+        "success_redirect_url": f"{base}/status",
+        "error_redirect_url": f"{base}/status",
         "preferred_language": "fr-FR",
     }
 
 
 def _default_qr_payin() -> dict[str, Any]:
     base = settings.public_base_url.rstrip("/") if settings.public_base_url else "https://example.com"
-    return {**_default_payin("qr"), "display_qr_url": f"{base}/qr/render"}
+    return {**_default_payin("qr"), "display_qr_url": f"{base}{settings.webhook_path}/qr"}
 
 
 def _default_tax_payout() -> dict[str, Any]:

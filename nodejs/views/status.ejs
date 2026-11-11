@@ -45,7 +45,7 @@
           <tr><th>merchantReference</th><td><code><%= transaction.merchantReference || '—' %></code></td></tr>
           <tr><th>providerReference</th><td><code><%= transaction.providerReference || '—' %></code></td></tr>
           <tr><th>method / country</th><td><code><%= transaction.method %></code> / <%= transaction.country %></td></tr>
-          <tr><th>requested</th><td><%= transaction.requestedAmount.value.toFixed(2) %> <%= transaction.requestedAmount.currency %></td></tr>
+          <tr><th>requested</th><td><%= transaction.requestedAmount ? transaction.requestedAmount.value.toFixed(2) + ' ' + transaction.requestedAmount.currency : '—' %></td></tr>
           <tr><th>final</th><td>
             <% if (transaction.finalAmount) { %><%= transaction.finalAmount.value.toFixed(2) %> <%= transaction.finalAmount.currency %>
             <% } else { %><em class="text-muted">not settled</em><% } %>

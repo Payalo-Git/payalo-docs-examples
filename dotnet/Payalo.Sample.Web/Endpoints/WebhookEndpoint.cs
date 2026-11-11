@@ -15,8 +15,9 @@ namespace Payalo.Sample.Web.Endpoints;
 //   - includes the `X-API-KEY` header set to *your* brand API key,
 //   - delivers the same MmoTransactionDto shape returned by GET /status/{ref},
 //   - expects any 2xx response within 15 seconds; the response body is optional and informational only,
-//   - retries up to 5 times with linear backoff + jitter on non-2xx,
-//   - may redeliver an already-acknowledged callback in rare cases (be idempotent).
+//   - makes ONE attempt per terminal state change and does not retry: reconcile with Status or Records
+//     if a delivery fails,
+//   - sends another callback when an operator changes a final status (be idempotent, key on reference + status).
 public static class WebhookEndpoint
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
@@ -24,6 +25,10 @@ public static class WebhookEndpoint
     public static IEndpointRouteBuilder MapPayaloWebhook(this IEndpointRouteBuilder routes)
     {
         var options = routes.ServiceProvider.GetRequiredService<IOptions<PayaloOptions>>().Value;
+
+        routes.MapPost($"{options.WebhookPath.TrimEnd('/')}/qr", HandleQrDataAsync)
+            .WithName("PayaloQrData")
+            .DisableAntiforgery();
 
         routes.MapPost(options.WebhookPath, HandleAsync)
             .WithName("PayaloWebhook")
@@ -68,14 +73,20 @@ public static class WebhookEndpoint
         MmoTransactionDto? payload;
         try
         {
-            payload = JsonSerializer.Deserialize<MmoTransactionDto>(raw, JsonOptions);
+            using var document = JsonDocument.Parse(raw);
+            if (IsPushCallback(document.RootElement))
+            {
+                log.LogInformation("Push callback received: read GET /status/{{id}} for the V2 transaction");
+                return Results.Ok(new CallbackResponse("ok"));
+            }
+
+            payload = document.RootElement.Deserialize<MmoTransactionDto>(JsonOptions);
         }
         catch (JsonException ex)
         {
             log.LogWarning(ex, "Webhook body was not valid JSON");
-            // Returning 400 will cause the gateway to retry. That is the correct behaviour
-            // for a transient parsing issue but pointless for a permanently-malformed body
-            // — in production you'd want to alert and accept the callback to break the loop.
+            // The gateway does not retry a failed delivery, so answering 400 only records the
+            // failure in its logs. Reconcile with Status or Records.
             return Results.BadRequest(new CallbackResponse("error"));
         }
 
@@ -86,8 +97,8 @@ public static class WebhookEndpoint
         }
 
         // 3) Persist (idempotently). TryRecord returns false on duplicate delivery.
-        //    Per the v2 callbacks docs the `gatewayReference` is the recommended
-        //    deduplication key.
+        //    Per the v2 callbacks docs the deduplication key is `gatewayReference` + `status`,
+        //    because an operator can change a final status and that sends another callback.
         var sourceIp = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
         var isNew = store.TryRecord(payload, raw, sourceIp);
 
@@ -99,10 +110,52 @@ public static class WebhookEndpoint
             !isNew);
 
         // 4) Always reply "ok" within 15 s. Heavy work (DB writes, fulfillment) belongs
-        //    in a background queue, not in this handler. Acknowledging duplicates as "ok"
-        //    is correct — it stops the gateway from continuing to retry.
+        //    in a background queue, not in this handler. Acknowledge duplicates as "ok" too.
         return Results.Ok(new CallbackResponse("ok"));
     }
+
+    private static async Task<IResult> HandleQrDataAsync(
+        HttpContext context,
+        IOptionsMonitor<PayaloOptions> optionsMonitor,
+        ILoggerFactory loggerFactory,
+        CancellationToken ct)
+    {
+        var log = loggerFactory.CreateLogger("Payalo.Webhook");
+        var presented = context.Request.Headers["X-API-KEY"].ToString();
+        if (string.IsNullOrEmpty(presented) || !FixedTimeEquals(presented, optionsMonitor.CurrentValue.ApiKey))
+        {
+            log.LogWarning("Rejected QR data request from {Ip} — X-API-KEY missing or mismatched",
+                context.Connection.RemoteIpAddress);
+            return Results.Unauthorized();
+        }
+
+        using var reader = new StreamReader(context.Request.Body, Encoding.UTF8);
+        var raw = await reader.ReadToEndAsync(ct);
+        QrDataRequest? data;
+        try
+        {
+            data = JsonSerializer.Deserialize<QrDataRequest>(raw, JsonOptions);
+        }
+        catch (JsonException ex)
+        {
+            log.LogWarning(ex, "QR data request body was not valid JSON");
+            return Results.BadRequest(new CallbackResponse("error"));
+        }
+
+        log.LogInformation(
+            "QR data received: gatewayReference={GatewayReference} qrCode={HasQrCode} deepLink={HasDeepLink} expiresAt={ExpiresAt}",
+            data?.GatewayReference,
+            string.IsNullOrEmpty(data?.QrCode) ? "no" : "yes",
+            string.IsNullOrEmpty(data?.DeepLink) ? "no" : "yes",
+            data?.ExpiresAt);
+
+        return Results.Ok(new CallbackResponse("ok"));
+    }
+
+    private static bool IsPushCallback(JsonElement root) =>
+        root.ValueKind == JsonValueKind.Object
+        && !root.TryGetProperty("gatewayReference", out _)
+        && root.TryGetProperty("id", out _);
 
     // Constant-time byte comparison. Use SHA-256 hashes so the comparison is over a
     // fixed-length input regardless of secret length.
@@ -114,4 +167,12 @@ public static class WebhookEndpoint
     }
 
     private sealed record CallbackResponse(string Status);
+
+    private sealed record QrDataRequest(
+        string? GatewayReference,
+        string? MerchantReference,
+        string? QrCode,
+        string? DeepLink,
+        string? Message,
+        string? ExpiresAt);
 }

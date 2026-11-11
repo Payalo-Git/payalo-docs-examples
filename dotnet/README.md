@@ -1,7 +1,7 @@
 # Payalo Merchant Gateway v2 — .NET samples
 
 Two .NET 9 references in one solution, sharing the same typed `HttpClient` +
-`ApiKeyHandler` + Polly resilience patterns:
+`ApiKeyHandler` + standard resilience patterns:
 
 - **[`Payalo.Sample.Web/`](Payalo.Sample.Web/)** — Blazor Web App. Full surface
   including the inbound webhook receiver. **This is what you want for end-to-end
@@ -91,22 +91,21 @@ dotnet/
   docker-compose.yml
 ```
 
-## Tests + CI
+## Tests
 
 ```bash
 dotnet test Payalo.IntegrationExamples.slnx
 ```
 
-GitHub Actions runs build + tests against this solution on every push (see
-`.github/workflows/ci.yml` at the repo root).
+The repository has no CI workflow yet, so run the tests locally before you change the samples.
 
 ## Notes
 
-- Every form regenerates `merchantReference` after each submit (success or failure) so
-  a quick re-submit doesn't trip the gateway's duplicate-reference rule.
-- Retries live in the typed-client pipeline (`AddStandardResilienceHandler`). The
-  default policy retries idempotent methods only — POST initiation calls are never
-  silently re-sent, which protects the merchantReference idempotency window.
+- Every form regenerates `merchantReference` after each submit (success or failure), so
+  a quick re-submit does not reuse a reference.
+- Retries live in the typed-client pipeline (`AddStandardResilienceHandler`). The default
+  policy retries every method, so `Program.cs` turns retries off for POST: a create is never
+  sent twice by the pipeline.
 - The webhook store is in-memory and DEMO-ONLY. Swap `Program.cs`'s singleton
   registration for a database-backed implementation in production so callbacks survive
   restart and dedupe across replicas.

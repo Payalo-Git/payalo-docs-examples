@@ -2,8 +2,8 @@ namespace Payalo.Sample.Web.Integration.Models;
 
 // Body of GET /records — one page of transactions plus opaque cursors.
 //
-// Cursor stability: `Pages.Next`/`Pages.Previous` encode the original query params, so
-// when paging you should pass *only* the `page` parameter on follow-up calls.
+// Cursor stability: `Pages.Next`/`Pages.Previous` are only valid for the query that produced
+// them, so repeat from, to and the filters, and add `page`, on follow-up calls.
 public sealed class RecordsResponseDto
 {
     public List<MmoTransactionDto> Data { get; set; } = new();

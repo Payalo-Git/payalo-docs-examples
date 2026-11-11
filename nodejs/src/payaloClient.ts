@@ -83,8 +83,9 @@ export interface ProviderDataDto {
 
 export interface MmoTransactionDto {
   status: string;
-  type: string;
-  flow: string;
+  // type, flow, party, method, country and requestedAmount are null while the payment is `new`.
+  type: string | null;
+  flow: string | null;
   gatewayReference: string;
   // Null for push (provider-initiated) transactions — no merchant request to echo.
   merchantReference: string | null;
@@ -92,10 +93,11 @@ export interface MmoTransactionDto {
   // fallback to gatewayReference.
   reconciliationReference: string | null;
   providerReference?: string | null;
-  party: MsisdnPartyDto;
-  method: string;
-  country: string;
-  requestedAmount: MoneyDto;
+  // On a tax payout the party is { id: "TaxAuthority", msisdn: null }.
+  party: (Omit<MsisdnPartyDto, "msisdn"> & { msisdn?: string | null }) | null;
+  method: string | null;
+  country: string | null;
+  requestedAmount: MoneyDto | null;
   finalAmount?: MoneyDto | null;
   labels?: Record<string, string> | null;
   createdAt: string;
@@ -140,9 +142,14 @@ export class PayaloApiError extends Error {
   get errorCode(): string | undefined { return this.problem?.errorCode; }
   get title(): string | undefined { return this.problem?.title; }
   get detail(): string | undefined { return this.problem?.detail; }
+  // On a 400 validation error `errorCode` is always `validation_failed`; the specific code
+  // (for example `invalid_page_token`) is the last segment of the `type` URL.
+  get specificCode(): string | undefined { return this.problem?.type?.split("/").pop(); }
 
-  // 4xx (except 408/429) should never be retried automatically — the request itself
-  // is bad, and retrying with the same merchantReference would burn the idempotency key.
+  // 4xx (except 408/429) should not be retried automatically — the request itself is bad.
+  // A rejected request creates nothing, so after you fix it you can send it again with the
+  // same merchantReference. After a 5xx or a timeout, read Payment Status by merchantReference
+  // first: the payment may have been registered.
   get isRetryable(): boolean {
     return this.statusCode >= 500 || this.statusCode === 408 || this.statusCode === 429;
   }
@@ -209,8 +216,7 @@ export class PayaloClient {
     return this.get<MmoTransactionDto>(`status/mref/${encodeURIComponent(ref)}`);
   }
 
-  // The gateway's records endpoint uses cursor pagination: the cursor encodes the
-  // original filter set, so on follow-up pages we send only `page`.
+  // Every call repeats from, to and the filters. The cursor is only valid for the same query.
   getRecords(params: {
     from: Date;
     to: Date;
@@ -220,17 +226,15 @@ export class PayaloClient {
     pageSize?: number;
     pageCursor?: string;
   }) {
-    const query: Record<string, string> = {};
-    if (params.pageCursor) {
-      query.page = params.pageCursor;
-    } else {
-      query.from = params.from.toISOString();
-      query.to = params.to.toISOString();
-      if (params.type) query.type = params.type;
-      if (params.method) query.method = params.method;
-      if (params.status) query.status = params.status;
-      if (params.pageSize !== undefined) query.pageSize = String(params.pageSize);
-    }
+    const query: Record<string, string> = {
+      from: params.from.toISOString(),
+      to: params.to.toISOString(),
+    };
+    if (params.type) query.type = params.type;
+    if (params.method) query.method = params.method;
+    if (params.status) query.status = params.status;
+    if (params.pageSize !== undefined) query.pageSize = String(params.pageSize);
+    if (params.pageCursor) query.page = params.pageCursor;
     const qs = new URLSearchParams(query).toString();
     return this.get<RecordsResponse>(`records?${qs}`);
   }
