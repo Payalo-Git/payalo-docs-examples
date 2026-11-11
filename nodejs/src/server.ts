@@ -87,7 +87,7 @@ app.post("/direct-payin", async (req, res) => {
     res.render("direct-payin", { form: { ...form, merchantReference: newMerchantRef("dep") }, response, error: null });
   } catch (e) {
     if (e instanceof PayaloApiError) {
-      return renderError(res, "direct-payin", { form: { ...form, merchantReference: newMerchantRef("dep") }, response: null }, e);
+      return renderError(res, "direct-payin", { submittedReference: form.merchantReference, form: { ...form, merchantReference: newMerchantRef("dep") }, response: null }, e);
     }
     throw e;
   }
@@ -116,7 +116,7 @@ app.post("/web-payin", async (req, res) => {
     res.render("web-payin", { form: { ...form, merchantReference: newMerchantRef("web") }, response, error: null });
   } catch (e) {
     if (e instanceof PayaloApiError) {
-      return renderError(res, "web-payin", { form: { ...form, merchantReference: newMerchantRef("web") }, response: null }, e);
+      return renderError(res, "web-payin", { submittedReference: form.merchantReference, form: { ...form, merchantReference: newMerchantRef("web") }, response: null }, e);
     }
     throw e;
   }
@@ -142,7 +142,7 @@ app.post("/direct-payout", async (req, res) => {
     res.render("direct-payout", { form: { ...form, merchantReference: newMerchantRef("payout") }, response, error: null });
   } catch (e) {
     if (e instanceof PayaloApiError) {
-      return renderError(res, "direct-payout", { form: { ...form, merchantReference: newMerchantRef("payout") }, response: null }, e);
+      return renderError(res, "direct-payout", { submittedReference: form.merchantReference, form: { ...form, merchantReference: newMerchantRef("payout") }, response: null }, e);
     }
     throw e;
   }
@@ -169,7 +169,7 @@ app.post("/qr-payin", async (req, res) => {
     res.render("qr-payin", { form: { ...form, merchantReference: newMerchantRef("qr") }, response, error: null });
   } catch (e) {
     if (e instanceof PayaloApiError) {
-      return renderError(res, "qr-payin", { form: { ...form, merchantReference: newMerchantRef("qr") }, response: null }, e);
+      return renderError(res, "qr-payin", { submittedReference: form.merchantReference, form: { ...form, merchantReference: newMerchantRef("qr") }, response: null }, e);
     }
     throw e;
   }
@@ -207,6 +207,7 @@ app.post("/direct-tax-payout", async (req, res) => {
         res,
         "direct-tax-payout",
         {
+          submittedReference: form.merchantReference,
           form: {
             ...form,
             merchantReference: newMerchantRef("tax"),

@@ -29,7 +29,7 @@
         @if (IsCreate && Exception.IsRetryable)
         {
             <div class="mt-2 small">
-                <em>Payalo may have registered this payment. Read Payment Status by <code>merchantReference</code> before you send again.</em>
+                <em>Payalo may have registered this payment. Read Payment Status for <code>merchantReference</code> @if (!string.IsNullOrWhiteSpace(SubmittedReference)) {<a href="@($"/status?mref={Uri.EscapeDataString(SubmittedReference)}")"><code>@SubmittedReference</code></a>} before you send again.</em>
             </div>
         }
         else if (IsCreate && (int)Exception.StatusCode is 400 or 401 or 422 && Exception.ErrorCode != "merchant_reference_duplicate")
@@ -53,4 +53,7 @@
 
     // Set on the pages that create a payment. Only then does the alert say whether the payment may exist.
     [Parameter] public bool IsCreate { get; set; }
+
+    // The merchantReference that the user just submitted. The form already shows the next one.
+    [Parameter] public string? SubmittedReference { get; set; }
 }

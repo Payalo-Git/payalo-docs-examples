@@ -333,9 +333,11 @@ class PayaloClient:
 
 def _iso_utc(value: datetime) -> str:
     """ISO 8601 with an explicit ``Z``. A naive datetime is taken as UTC."""
-    if value.tzinfo is not None:
-        value = value.astimezone(timezone.utc)
-    return value.strftime("%Y-%m-%dT%H:%M:%SZ")
+    if value.tzinfo is None:
+        value = value.replace(tzinfo=timezone.utc)
+    value = value.astimezone(timezone.utc)
+    # Keep the fractional seconds: dropping them would change the requested window.
+    return value.isoformat().replace("+00:00", "Z")
 
 
 def build_async_client() -> httpx.AsyncClient:

@@ -76,7 +76,8 @@ public static class WebhookEndpoint
             using var document = JsonDocument.Parse(raw);
             if (IsPushCallback(document.RootElement))
             {
-                log.LogInformation("Push callback received: read GET /status/{{id}} for the V2 transaction");
+                var pushId = document.RootElement.GetProperty("id").ToString();
+                log.LogInformation("Push callback received: id={PushId}. Read GET /status/{PushId} for the V2 transaction", pushId);
                 return Results.Ok(new CallbackResponse("ok"));
             }
 

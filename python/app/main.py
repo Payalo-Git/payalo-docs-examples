@@ -142,6 +142,7 @@ async def direct_payin_submit(
     return await _submit(
         request, "direct-payin.html", "dep",
         lambda c: c.create_direct_payin(method.strip(), body),
+        submitted_reference=merchantReference,
         form_overrides={
             "method": method, "value": value, "currency": currency, "user_id": userId,
             "msisdn": msisdn, "country": country, "result_url": resultUrl,
@@ -183,6 +184,7 @@ async def direct_payout_submit(
     return await _submit(
         request, "direct-payout.html", "payout",
         lambda c: c.create_direct_payout(method.strip(), body),
+        submitted_reference=merchantReference,
         form_overrides={
             "method": method, "value": value, "currency": currency, "user_id": userId,
             "msisdn": msisdn, "country": country, "result_url": resultUrl,
@@ -230,6 +232,7 @@ async def web_payin_submit(
     return await _submit(
         request, "web-payin.html", "web",
         lambda c: c.create_web_payin(method.strip(), body),
+        submitted_reference=merchantReference,
         form_overrides={
             "method": method, "value": value, "currency": currency, "user_id": userId,
             "msisdn": msisdn, "country": country, "result_url": resultUrl,
@@ -275,6 +278,7 @@ async def qr_payin_submit(
     return await _submit(
         request, "qr-payin.html", "qr",
         lambda c: c.create_qr_payin(method.strip(), body),
+        submitted_reference=merchantReference,
         form_overrides={
             "method": method, "value": value, "currency": currency, "user_id": userId,
             "msisdn": msisdn, "country": country, "result_url": resultUrl,
@@ -331,7 +335,7 @@ async def direct_tax_payout_submit(
         return templates.TemplateResponse(
             request,
             "direct-tax-payout.html",
-            {"form": next_form, "response": None, "error": _render_error(e)},
+            {"form": next_form, "response": None, "error": _render_error(e), "submitted_reference": merchantReference},
         )
 
 
@@ -434,6 +438,7 @@ async def _submit(
     prefix: str,
     call,
     form_overrides: dict[str, Any],
+    submitted_reference: str,
 ) -> HTMLResponse:
     """Common pay-in/pay-out submit helper. Handles success + PayaloApiError, and
     auto-bumps the merchantReference on the next-form so a quick re-submit doesn't
@@ -448,7 +453,14 @@ async def _submit(
     except PayaloApiError as e:
         next_form = {**form_overrides, "merchant_reference": new_merchant_ref(prefix)}
         return templates.TemplateResponse(
-            request, template, {"form": next_form, "response": None, "error": _render_error(e)}
+            request,
+            template,
+            {
+                "form": next_form,
+                "response": None,
+                "error": _render_error(e),
+                "submitted_reference": submitted_reference,
+            },
         )
 
 

@@ -11,7 +11,7 @@
     <small class="text-muted"><%= error.friendly %></small>
     <% if (typeof isCreate !== 'undefined' && isCreate) { %>
       <% if (error.status >= 500 || error.status === 0 || error.status === 408 || error.status === 429) { %>
-        <div class="mt-2 small"><em>Payalo may have registered this payment. Read Payment Status by <code>merchantReference</code> before you send again.</em></div>
+        <div class="mt-2 small"><em>Payalo may have registered this payment. Read Payment Status for <code>merchantReference</code> <% if (typeof submittedReference !== 'undefined' && submittedReference) { %><a href="/status?mref=<%= encodeURIComponent(submittedReference) %>"><code><%= submittedReference %></code></a> <% } %>before you send again.</em></div>
       <% } else if ([400, 401, 422].includes(error.status) && error.errorCode !== 'merchant_reference_duplicate') { %>
         <div class="mt-2 small"><em>Nothing was created. Fix the request and send it again. The same <code>merchantReference</code> can be used.</em></div>
       <% } %>
