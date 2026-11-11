@@ -7,8 +7,9 @@ outbound request — the equivalent of the .NET sample's ApiKeyHandler Delegatin
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any
+from urllib.parse import quote
 
 import httpx
 from pydantic import BaseModel, ConfigDict, Field
@@ -48,6 +49,16 @@ class MoneyDto(_CamelOut):
 class MsisdnPartyDto(_CamelOut):
     id: str
     msisdn: str
+    first_name: str | None = None
+    last_name: str | None = None
+    email: str | None = None
+
+
+class PartyDto(_CamelOut):
+    """The party as it comes back in a response. Only ``id`` is always set: ``msisdn`` is
+    null on a tax payout, and the other fields are null when you did not send them."""
+    id: str
+    msisdn: str | None = None
     first_name: str | None = None
     last_name: str | None = None
     email: str | None = None
@@ -117,8 +128,10 @@ class ProviderDataDto(_CamelOut):
 
 class MmoTransactionDto(_CamelOut):
     status: str
-    type: str
-    flow: str
+    # Null while the payment is `new`, and in the early `failed` answer (the payment was not
+    # written yet): type, flow, party, method, country and requested_amount are all null then.
+    type: str | None = None
+    flow: str | None = None
     gateway_reference: str
     # Null for push (provider-initiated) transactions — no merchant request to echo.
     merchant_reference: str | None = None
@@ -126,10 +139,10 @@ class MmoTransactionDto(_CamelOut):
     # fallback to gateway_reference.
     reconciliation_reference: str | None = None
     provider_reference: str | None = None
-    party: MsisdnPartyDto
-    method: str
-    country: str
-    requested_amount: MoneyDto
+    party: PartyDto | None = None
+    method: str | None = None
+    country: str | None = None
+    requested_amount: MoneyDto | None = None
     final_amount: MoneyDto | None = None
     labels: dict[str, str] | None = None
     created_at: datetime
@@ -183,6 +196,17 @@ class PayaloApiError(Exception):
         return self.problem.error_code if self.problem else None
 
     @property
+    def specific_code(self) -> str | None:
+        """The specific validation code: the last segment of the problem ``type`` URL.
+
+        On a 400 validation failure ``errorCode`` is always ``validation_failed``; the
+        reason (for example ``invalid_language_code``) is only in ``type``.
+        """
+        if not self.problem or not self.problem.type:
+            return None
+        return self.problem.type.rstrip("/").rsplit("/", 1)[-1] or None
+
+    @property
     def title(self) -> str | None:
         return self.problem.title if self.problem else None
 
@@ -192,8 +216,9 @@ class PayaloApiError(Exception):
 
     @property
     def is_retryable(self) -> bool:
-        # 4xx (except 408/429) should never be retried — retrying with the same
-        # merchantReference would burn the idempotency key.
+        # A 4xx (except 408/429) created nothing: fix the request before you send it again.
+        # A 5xx or a timeout may or may not have registered the payment: read Payment Status
+        # by merchantReference before you send again.
         return self.status_code >= 500 or self.status_code in (408, 429)
 
     def _build_message(self) -> str:
@@ -232,10 +257,10 @@ class PayaloClient:
         return await self._post(f"direct/taxpayout/{method}", body, InitiatePaymentResponse)
 
     async def get_by_gateway_reference(self, ref: str) -> MmoTransactionDto:
-        return await self._get(f"status/{ref}", MmoTransactionDto)
+        return await self._get(f"status/{quote(ref, safe='')}", MmoTransactionDto)
 
     async def get_by_merchant_reference(self, ref: str) -> MmoTransactionDto:
-        return await self._get(f"status/mref/{ref}", MmoTransactionDto)
+        return await self._get(f"status/mref/{quote(ref, safe='')}", MmoTransactionDto)
 
     async def get_records(
         self,
@@ -248,22 +273,19 @@ class PayaloClient:
         page_size: int | None = None,
         page_cursor: str | None = None,
     ) -> RecordsResponse:
-        # Cursor pagination: cursor encodes the original filters, so on follow-up pages
-        # we send only `page` and let the gateway re-apply the original filter set.
-        params: dict[str, str] = {}
+        # Every call repeats from, to and the filters. The cursor is only valid for the same
+        # query, so a request with only `page` is a 400.
+        params: dict[str, str] = {"from": _iso_utc(from_), "to": _iso_utc(to)}
+        if type_:
+            params["type"] = type_
+        if method:
+            params["method"] = method
+        if status:
+            params["status"] = status
+        if page_size is not None:
+            params["pageSize"] = str(page_size)
         if page_cursor:
             params["page"] = page_cursor
-        else:
-            params["from"] = from_.isoformat()
-            params["to"] = to.isoformat()
-            if type_:
-                params["type"] = type_
-            if method:
-                params["method"] = method
-            if status:
-                params["status"] = status
-            if page_size is not None:
-                params["pageSize"] = str(page_size)
         return await self._get("records", RecordsResponse, params=params)
 
     # ----------------------------------------------------------------------------------
@@ -307,6 +329,15 @@ class PayaloClient:
         else:
             raw_body = response.text
         raise PayaloApiError(response.status_code, problem, raw_body, trace_id)
+
+
+def _iso_utc(value: datetime) -> str:
+    """ISO 8601 with an explicit ``Z``. A naive datetime is taken as UTC."""
+    if value.tzinfo is None:
+        value = value.replace(tzinfo=timezone.utc)
+    value = value.astimezone(timezone.utc)
+    # Keep the fractional seconds: dropping them would change the requested window.
+    return value.isoformat().replace("+00:00", "Z")
 
 
 def build_async_client() -> httpx.AsyncClient:

@@ -1,8 +1,9 @@
 """In-memory log of received gateway callbacks. DEMO ONLY — wipes on restart.
 
 Production integrations write each entry to a database keyed on the gateway-assigned
-``gatewayReference`` so callbacks are durable, dedupable across replicas, and
-reconcilable via /records.
+``gatewayReference`` and ``status`` so callbacks are durable, dedupable across replicas,
+and reconcilable via /records. A payment can send a second callback with a different
+status (an operator can reverse a final status), so the status is part of the key.
 """
 
 from __future__ import annotations
@@ -34,16 +35,18 @@ class WebhookStore:
     def try_record(self, payload: dict[str, Any], raw_body: str, source_ip: str) -> bool:
         """Insert if absent. Returns True when newly stored, False on duplicate.
 
-        Keyed on the gateway-assigned ``gatewayReference`` per the v2 callbacks docs.
+        Keyed on the gateway-assigned ``gatewayReference`` plus the ``status``, as the v2
+        callbacks docs say: a repeat of the same status is a duplicate, a new status is not.
         """
         gateway_reference = payload.get("gatewayReference")
         if not gateway_reference or not isinstance(gateway_reference, str):
             return False
+        key = f"{gateway_reference}|{payload.get('status')}"
         with self._lock:
-            if gateway_reference in self._by_reference:
+            if key in self._by_reference:
                 return False
-            self._by_reference[gateway_reference] = WebhookEntry(datetime.utcnow(), source_ip, payload, raw_body)
-            self._by_reference.move_to_end(gateway_reference, last=False)  # newest-first
+            self._by_reference[key] = WebhookEntry(datetime.utcnow(), source_ip, payload, raw_body)
+            self._by_reference.move_to_end(key, last=False)  # newest-first
             while len(self._by_reference) > _MAX_ENTRIES:
                 self._by_reference.popitem(last=True)
         return True

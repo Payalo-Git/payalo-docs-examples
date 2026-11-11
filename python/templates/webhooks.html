@@ -34,11 +34,11 @@
         <tr>
           <td><small>{{ e.received_at.strftime('%H:%M:%S') }}</small></td>
           <td><span class="badge {{ cls }}">{{ p.status }}</span></td>
-          <td><small>{{ p.type }} / {{ p.flow }}</small></td>
+          <td><small>{{ p.type or '—' }} / {{ p.flow or '—' }}</small></td>
           <td><a href="/status?gw={{ p.gatewayReference }}"><code>{{ p.gatewayReference }}</code></a></td>
           <td><code>{{ p.merchantReference or '—' }}</code></td>
-          <td><code>{{ p.method }}</code></td>
-          <td>{{ '%.2f'|format(p.requestedAmount.value or 0) }} {{ p.requestedAmount.currency }}</td>
+          <td><code>{{ p.method or '—' }}</code></td>
+          <td>{% if p.requestedAmount %}{{ '%.2f'|format(p.requestedAmount.value or 0) }} {{ p.requestedAmount.currency }}{% else %}—{% endif %}</td>
           <td>{% if p.errorCode %}<span class="badge bg-danger" title="{{ p.errorMessage }}">{{ p.errorCode }}</span>{% endif %}</td>
         </tr>
       {% endfor %}

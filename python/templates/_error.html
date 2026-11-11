@@ -9,8 +9,12 @@
     <span>{{ error.detail }}</span>
     <hr />
     <small class="text-muted">{{ error.friendly }}</small>
-    {% if not error.is_retryable %}
-      <div class="mt-2 small"><em>Not retryable — use a fresh <code>merchantReference</code> before resubmitting.</em></div>
+    {% if is_create %}
+      {% if error.status >= 500 or error.status == 0 or error.status in (408, 429) %}
+        <div class="mt-2 small"><em>Payalo may have registered this payment. Read Payment Status for <code>merchantReference</code> {% if submitted_reference %}<a href="/status?mref={{ submitted_reference | urlencode }}"><code>{{ submitted_reference }}</code></a> {% endif %}before you send again.</em></div>
+      {% elif error.status in (400, 401, 422) and error.error_code != 'merchant_reference_duplicate' %}
+        <div class="mt-2 small"><em>Nothing was created. Fix the request and send it again. The same <code>merchantReference</code> can be used.</em></div>
+      {% endif %}
     {% endif %}
     {% if error.trace_id %}
       <div class="mt-2 small text-muted">Trace: <code>{{ error.trace_id }}</code></div>

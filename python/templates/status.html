@@ -34,7 +34,7 @@
 {% if transaction %}
   {% set badge_cls = {'success': 'bg-success', 'failed': 'bg-danger', 'pending': 'bg-warning text-dark'}.get(transaction.status, 'bg-secondary') %}
   <h3>
-    {{ transaction.type }} — {{ transaction.flow }}
+    {{ transaction.type or '—' }} — {{ transaction.flow or '—' }}
     <span class="badge {{ badge_cls }}">{{ transaction.status }}</span>
   </h3>
   <div class="row">
@@ -44,8 +44,8 @@
           <tr><th>gatewayReference</th><td><code>{{ transaction.gateway_reference }}</code></td></tr>
           <tr><th>merchantReference</th><td><code>{{ transaction.merchant_reference or '—' }}</code></td></tr>
           <tr><th>providerReference</th><td><code>{{ transaction.provider_reference or '—' }}</code></td></tr>
-          <tr><th>method / country</th><td><code>{{ transaction.method }}</code> / {{ transaction.country }}</td></tr>
-          <tr><th>requested</th><td>{{ '%.2f'|format(transaction.requested_amount.value) }} {{ transaction.requested_amount.currency }}</td></tr>
+          <tr><th>method / country</th><td><code>{{ transaction.method or '—' }}</code> / {{ transaction.country or '—' }}</td></tr>
+          <tr><th>requested</th><td>{% if transaction.requested_amount %}{{ '%.2f'|format(transaction.requested_amount.value) }} {{ transaction.requested_amount.currency }}{% else %}—{% endif %}</td></tr>
           <tr><th>final</th><td>
             {% if transaction.final_amount %}{{ '%.2f'|format(transaction.final_amount.value) }} {{ transaction.final_amount.currency }}
             {% else %}<em class="text-muted">not settled</em>{% endif %}

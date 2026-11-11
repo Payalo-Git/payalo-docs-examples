@@ -4,10 +4,10 @@ namespace Payalo.Sample.Console.Integration.Models;
 
 // Body of POST /direct/payin/{method}.
 //
-// `merchantReference` acts as an idempotency key. The gateway tracks submitted IDs in
-// its primary deduplication store for ~15 minutes; downstream services may reject
-// duplicates for longer. Always generate a fresh ULID/UUID per attempt — never reuse
-// a reference, even if the previous transaction failed.
+// `merchantReference` acts as an idempotency key. The gateway keeps a registered reference
+// used permanently. A request that was rejected (400, 401, or a 422 other than a duplicate)
+// registers nothing, so you can send it again with the same reference after you fix it.
+// After a 500 or a timeout, read Payment Status by merchantReference before you send again.
 public sealed class PayInRequest
 {
     [Required]
@@ -19,10 +19,10 @@ public sealed class PayInRequest
     [Required, StringLength(10, MinimumLength = 2)]
     public string Country { get; set; } = "";
 
-    [Required, Url, StringLength(2048)]
+    [Required, Url, StringLength(255)]
     public string ResultUrl { get; set; } = "";
 
-    [Required, StringLength(255)]
+    [Required, StringLength(100)]
     public string MerchantReference { get; set; } = "";
 
     [StringLength(255)]

@@ -60,7 +60,7 @@ python/
     webhook_store.py       # in-memory webhook log (DEMO ONLY)
     merchant_ref.py        # one-line UUID generator
   templates/               # Jinja2 templates (one per page + small partials)
-  pyproject.toml
+  requirements.txt
 ```
 
 ## Notes

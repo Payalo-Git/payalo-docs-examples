@@ -65,11 +65,11 @@ public sealed class PayaloClientTests : IDisposable
                 .WithHeader("Content-Type", "application/problem+json")
                 .WithBody("""
                     {
-                      "type": "https://docs.payalo.com/errors/merchant_transactionid_duplicate",
+                      "type": "https://docs.payalo.com/api-reference/error-codes/merchant_reference_duplicate",
                       "title": "Business logic error",
                       "status": 422,
                       "detail": "Duplicate reference detected in merchant request.",
-                      "errorCode": "merchant_transactionid_duplicate"
+                      "errorCode": "merchant_reference_duplicate"
                     }
                     """));
 
@@ -77,9 +77,8 @@ public sealed class PayaloClientTests : IDisposable
             _client.CreateDirectPayInAsync("mpesa-ke", BuildPayInRequest()));
 
         Assert.Equal(HttpStatusCode.UnprocessableEntity, ex.StatusCode);
-        Assert.Equal("merchant_transactionid_duplicate", ex.ErrorCode);
-        // 422 with a specific business-rule violation is not retryable — the caller
-        // would burn the merchantReference if it blindly retried.
+        Assert.Equal("merchant_reference_duplicate", ex.ErrorCode);
+        // A 422 is a business-rule answer, so the pipeline must not retry it.
         Assert.False(ex.IsRetryable);
     }
 

@@ -56,14 +56,19 @@ public static class PayaloErrorMessages
         ["merchant_limit_exceeded"]            = "The merchant has hit a configured limit.",
         ["merchant_invalid_credentials"]       = "The merchant credentials at the provider are invalid.",
         ["merchant_cancelled_by_risk"]         = "A risk rule cancelled this transaction.",
-        ["merchant_transactionid_duplicate"]   = "Duplicate `merchantReference`. Retry with a new reference.",
+        ["merchant_reference_duplicate"]       = "Another payment of your brand already uses this `merchantReference`. Read Payment Status by `merchantReference` before you send a new payment.",
         ["merchant_unknown_error"]             = "Merchant-side error we couldn't classify.",
 
         // Gateway and lifecycle.
         ["transaction_expired"]                = "The gateway-side timeout fired. The transaction was auto-marked failed.",
-        ["transaction_not_found"]              = "Status lookup failed because the transaction does not exist for this brand.",
+        ["transaction_not_found"]              = "The provider did not find the transaction.",
         ["gateway_too_many_requests"]          = "The gateway rate-limited the request. Back off and retry.",
         ["hpp_open_timeout"]                   = "The hosted payment page session was created but never opened in time.",
+        ["transaction_placement_expired"]      = "Payalo did not send the payment to a provider in time, so no provider was contacted. If Payment Status shows this code with `completedAt` null, the answer may not be final yet: wait a minute and read the status again before you start a new payment for the same order.",
+        ["provider_overloaded"]                = "Too many of your payments for the same payment method and provider were already waiting to be sent. Payalo did not send this one to the provider.",
+        ["transaction_placement_failed_due_to_circuit_breaker_settings"] = "Too many recent requests from Payalo to the provider failed, so Payalo stopped sending payments to it for a short time. Payalo did not send this payment to the provider.",
+        ["merchant_not_available"]             = "Payalo tried several times to deliver the QR data to your `displayQrUrl`. Your endpoint never answered with a `2xx` status (a success status, such as `200`).",
+        ["merchant_required_parameter_missing"] = "Payalo refused your `displayQrUrl` when it tried to deliver the QR data, so the payment failed. For example, the create request accepts an `http://` URL, but Payalo delivers QR data only to `https`.",
 
         // Synchronous (request-time) error codes — see docs §5 Error Handling.
         ["validation_failed"]      = "One or more fields failed validation. Check the detail message.",
@@ -71,7 +76,7 @@ public static class PayaloErrorMessages
         ["unauthorized"]           = "API key is missing or invalid.",
         ["not_found"]              = "Resource not found.",
         ["business_logic_error"]   = "A business rule was violated.",
-        ["internal_server_error"]  = "Unexpected server-side error. Safe to retry after a short delay.",
+        ["internal_server_error"]  = "Unexpected server-side error. Payalo may still have registered the payment: read Payment Status by `merchantReference` before you send the request again.",
     };
 
     // Returns a friendly explanation for the code, or `fallback` (typically the raw

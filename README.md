@@ -6,13 +6,13 @@ and read the per-sample README for setup.
 
 | Sample | Stack | README |
 |---|---|---|
-| **`dotnet/Payalo.Sample.Web/`** | Blazor Web App on .NET 9, typed `HttpClient` + Polly resilience | [README](dotnet/README.md) |
+| **`dotnet/Payalo.Sample.Web/`** | Blazor Web App on .NET 9, typed `HttpClient` + standard resilience | [README](dotnet/README.md) |
 | **`dotnet/Payalo.Sample.Console/`** | .NET 9 CLI sharing the same typed-client patterns (no webhook receiver) | [README](dotnet/Payalo.Sample.Console/README.md) |
 | **`nodejs/`** | TypeScript + Express + EJS, `axios` client | [README](nodejs/README.md) |
 | **`python/`** | Python 3.12 + FastAPI + Jinja2, `httpx` client | [README](python/README.md) |
 
 The full V2 API reference is on the documentation site at
-[docs.payalo.com](http://docs.payalo.com).
+[docs.payalo.com](https://docs.payalo.com).
 
 ---
 
@@ -23,7 +23,7 @@ The full V2 API reference is on the documentation site at
 - Records (paginated bulk reconciliation)
 - Inbound webhook receiver with `X-API-KEY` validation and idempotent dedupe
 - RFC 7807 Problem Details parsing with friendly messages for every documented async error code
-- Auto-bumping `merchantReference` after every submit so duplicate-reference errors are impossible
+- Auto-bumping `merchantReference` after every submit so a quick re-submit does not reuse a reference
 
 The samples are intentionally small (~600–1500 LoC each) and KISS-first — each one is a
 self-contained integration reference an intermediate developer can read in an afternoon.
@@ -96,9 +96,8 @@ payalo-integration-examples/
     tests/
   nodejs/                     # TypeScript + Express + EJS sample
   python/                     # Python 3.12 + FastAPI + Jinja2 sample
-  .github/workflows/          # GitHub Actions CI (.NET build + tests)
 ```
 
-Tests + CI currently cover the .NET sample only. The Node and Python samples are
+Tests currently cover the .NET sample only, and no CI workflow runs them yet. The Node and Python samples are
 intentionally test-light to keep them readable; they can grow tests when there's
 production demand.

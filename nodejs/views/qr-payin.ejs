@@ -6,8 +6,10 @@ const description = `<p><code>POST /qr/payin/{method}</code> — QR-code deposit
 POSTs the QR payload to your <code>displayQrUrl</code> after initiation; your application is
 responsible for rendering the QR for the end user to scan.</p>
 <div class="alert alert-info small">
-  The required <code>displayQrUrl</code> is the only structural difference from Direct Pay-In.
-  In a real integration this points at your checkout's QR-render endpoint.
+  The required <code>displayQrUrl</code> is the only structural difference from Direct
+  Pay-In. The default points at this sample's own receiver, which logs the QR data and
+  answers 200. In a real integration it points at your checkout, which answers with a
+  2xx status first and then shows the QR code.
 </div>`;
 
 const extraFields = `

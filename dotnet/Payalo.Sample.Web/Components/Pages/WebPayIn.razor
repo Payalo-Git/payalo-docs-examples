@@ -92,7 +92,7 @@
     <div class="col-lg-5">
         @if (_apiException is not null)
         {
-            <ProblemDetailsAlert Exception="_apiException" />
+            <ProblemDetailsAlert Exception="_apiException" IsCreate="true" SubmittedReference="_submittedReference" />
         }
         else if (_response is not null)
         {
@@ -116,6 +116,7 @@
 
 @code {
     private readonly WebPayInRequest _request = new();
+    private string? _submittedReference;
     private string _method = "card-eu";
     private WebPayInResponseDto? _response;
     private PayaloApiException? _apiException;
@@ -137,8 +138,8 @@
         _request.Country = "DE";
         _request.MerchantReference = $"web-{Guid.NewGuid():N}";
         _request.ResultUrl = $"{publicBase}{options.WebhookPath}";
-        _request.SuccessRedirectUrl = $"{publicBase}/payment/success";
-        _request.ErrorRedirectUrl = $"{publicBase}/payment/error";
+        _request.SuccessRedirectUrl = $"{publicBase}/status";
+        _request.ErrorRedirectUrl = $"{publicBase}/status";
         _request.PreferredLanguage = "fr-FR";
     }
 
@@ -147,6 +148,7 @@
         _isSubmitting = true;
         _response = null;
         _apiException = null;
+        _submittedReference = _request.MerchantReference;
 
         try
         {

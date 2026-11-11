@@ -81,6 +81,32 @@ public sealed class WebhookEndpointTests : IClassFixture<WebhookTestFactory>
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.Contains("\"status\":\"ok\"", body);
     }
+
+    [Fact]
+    public async Task Webhook_Returns200Ok_ForPushCallbackWithNumericRequestedAmount()
+    {
+        using var content = new StringContent(
+            """{"id":"b2p123","status":"Success","requestedAmount":100.5}""",
+            Encoding.UTF8, "application/json");
+        using var request = new HttpRequestMessage(HttpMethod.Post, "/webhooks/payalo") { Content = content };
+        request.Headers.Add("X-API-KEY", ApiKey);
+
+        var response = await _client.SendAsync(request);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task QrData_Returns400_WhenBodyIsNotValidJson()
+    {
+        using var content = new StringContent("not json", Encoding.UTF8, "application/json");
+        using var request = new HttpRequestMessage(HttpMethod.Post, "/webhooks/payalo/qr") { Content = content };
+        request.Headers.Add("X-API-KEY", ApiKey);
+
+        var response = await _client.SendAsync(request);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
 }
 
 public sealed class WebhookTestFactory : WebApplicationFactory<Program>
