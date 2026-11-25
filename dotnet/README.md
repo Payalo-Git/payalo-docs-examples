@@ -41,7 +41,7 @@ dotnet run -- payin-direct                 # interactive prompts
 
 | Key | Required | Default |
 |---|---|---|
-| `Payalo:BaseUrl` | yes | `https://dev-api-internal.payalo.com/gateway/mmo/v2/` |
+| `Payalo:BaseUrl` | yes | `https://api.payalo.com/gateway/mmo/v2/` |
 | `Payalo:ApiKey` | yes | *(unset)* |
 | `Payalo:WebhookPath` | no | `/webhooks/payalo` |
 | `Payalo:PublicBaseUrl` | recommended | *(unset)* — your public tunnel URL |
