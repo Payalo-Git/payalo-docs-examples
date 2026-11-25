@@ -58,7 +58,7 @@
   </div>
 
   <div class="col-lg-5">
-    {% include "_error.html" %}
+    {% with is_create = true %}{% include "_error.html" %}{% endwith %}
     {% if response %}{{ success_panel|safe }}{% endif %}
   </div>
 </div>

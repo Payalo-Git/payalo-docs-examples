@@ -69,7 +69,7 @@ else
                     </td>
                     <td><code>@(string.IsNullOrEmpty(e.Payload.MerchantReference) ? "—" : e.Payload.MerchantReference)</code></td>
                     <td><code>@e.Payload.Method</code></td>
-                    <td>@e.Payload.RequestedAmount.Value.ToString("0.00") @e.Payload.RequestedAmount.Currency</td>
+                    <td>@(e.Payload.RequestedAmount is { } r ? $"{r.Value:0.00} {r.Currency}" : "—")</td>
                     <td>
                         @if (!string.IsNullOrEmpty(e.Payload.ErrorCode))
                         {

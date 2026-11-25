@@ -11,7 +11,8 @@ namespace Payalo.Sample.Console.Integration;
 //
 // Registered via AddHttpClient<PayaloClient>() in Program.cs, which adds:
 //   - ApiKeyHandler (injects X-Api-Key on every request)
-//   - The standard resilience handler (retry + circuit breaker on transient faults)
+//   - The standard resilience handler (retry + circuit breaker on transient faults). It retries every
+//     method by default; Program.cs turns retries off for POST so a create is never sent twice.
 //
 // Each method maps 1:1 to a documented endpoint. We deliberately do **not** retry inside
 // the methods themselves — retry policy lives in the handler pipeline so it applies
@@ -78,22 +79,18 @@ public sealed class PayaloClient
         string? pageCursor = null,
         CancellationToken ct = default)
     {
-        // The cursor encodes the original filter set, so on follow-up calls we *only*
-        // send `page`. Sending mismatched filters with a cursor returns 400.
-        var query = new Dictionary<string, string?>();
-        if (pageCursor is { Length: > 0 })
+        // The cursor is only valid for the query that produced it, so every call repeats
+        // from, to and the filters. A cursor with different values returns 400.
+        var query = new Dictionary<string, string?>
         {
-            query["page"] = pageCursor;
-        }
-        else
-        {
-            query["from"] = from.UtcDateTime.ToString("o");
-            query["to"]   = to.UtcDateTime.ToString("o");
-            if (type is not null)     query["type"] = type;
-            if (method is not null)   query["method"] = method;
-            if (status is not null)   query["status"] = status;
-            if (pageSize is not null) query["pageSize"] = pageSize.Value.ToString();
-        }
+            ["from"] = from.UtcDateTime.ToString("o"),
+            ["to"] = to.UtcDateTime.ToString("o"),
+        };
+        if (type is not null)     query["type"] = type;
+        if (method is not null)   query["method"] = method;
+        if (status is not null)   query["status"] = status;
+        if (pageSize is not null) query["pageSize"] = pageSize.Value.ToString();
+        if (pageCursor is { Length: > 0 }) query["page"] = pageCursor;
 
         return GetAsync<RecordsResponseDto>(BuildUrl("records", query), ct);
     }

@@ -1,7 +1,8 @@
 """Generate fresh merchantReference values.
 
-The gateway's deduplication store retains used IDs for ~15 minutes; never reuse one,
-even after a failure.
+The gateway keeps a registered merchantReference used for good, so a new payment needs a
+new one. This sample always generates a fresh value, which is also safe after a rejected
+request.
 """
 
 from uuid import uuid4

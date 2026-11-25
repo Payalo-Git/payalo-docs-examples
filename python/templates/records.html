@@ -5,8 +5,8 @@
 <h1>Records (bulk reconciliation)</h1>
 <p><code>GET /records</code> — paged window of transactions for catching up after a callback outage or running daily reconciliation.</p>
 <div class="alert alert-info small">
-  Cursor pagination encodes the original filters, so on follow-up pages we send only
-  the cursor.
+  Every call repeats <code>from</code>, <code>to</code> and the filters. A cursor is only valid
+  for the same query, so the Previous and Next links carry them.
 </div>
 
 <form method="get" action="/records">
@@ -65,9 +65,9 @@
           {% set cls = {'success': 'bg-success', 'failed': 'bg-danger', 'pending': 'bg-warning text-dark'}.get(tx.status, 'bg-secondary') %}
           <tr>
             <td>{{ tx.created_at }}</td>
-            <td><small>{{ tx.type }} / {{ tx.flow }}</small></td>
-            <td><code>{{ tx.method }}</code></td>
-            <td>{{ '%.2f'|format(tx.requested_amount.value) }} {{ tx.requested_amount.currency }}</td>
+            <td><small>{{ tx.type or '—' }} / {{ tx.flow or '—' }}</small></td>
+            <td><code>{{ tx.method or '—' }}</code></td>
+            <td>{% if tx.requested_amount %}{{ '%.2f'|format(tx.requested_amount.value) }} {{ tx.requested_amount.currency }}{% else %}—{% endif %}</td>
             <td><a href="/status?gw={{ tx.gateway_reference }}"><code>{{ tx.gateway_reference }}</code></a></td>
             <td><code>{{ tx.merchant_reference or '—' }}</code></td>
             <td><span class="badge {{ cls }}">{{ tx.status }}</span></td>
@@ -78,13 +78,13 @@
     </table>
     <div class="d-flex justify-content-between mt-3">
       {% if page_data.pages.previous %}
-        <a class="btn btn-outline-secondary" href="/records?page={{ page_data.pages.previous }}">← Previous</a>
+        <a class="btn btn-outline-secondary" href="/records?{{ {'searched': 1, 'from': filters['from'], 'to': filters.to, 'type': filters.type, 'method': filters.method, 'status': filters.status, 'pageSize': filters.page_size, 'page': page_data.pages.previous}|urlencode }}">← Previous</a>
       {% else %}
         <button class="btn btn-outline-secondary" disabled>← Previous</button>
       {% endif %}
       <small class="text-muted align-self-center">{{ page_data.data|length }} records on this page.</small>
       {% if page_data.pages.next %}
-        <a class="btn btn-outline-secondary" href="/records?page={{ page_data.pages.next }}">Next →</a>
+        <a class="btn btn-outline-secondary" href="/records?{{ {'searched': 1, 'from': filters['from'], 'to': filters.to, 'type': filters.type, 'method': filters.method, 'status': filters.status, 'pageSize': filters.page_size, 'page': page_data.pages.next}|urlencode }}">Next →</a>
       {% else %}
         <button class="btn btn-outline-secondary" disabled>Next →</button>
       {% endif %}

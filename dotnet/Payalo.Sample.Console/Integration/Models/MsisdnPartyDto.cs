@@ -5,7 +5,7 @@ namespace Payalo.Sample.Console.Integration.Models;
 // Represents an end user (payer for pay-ins, payee for pay-outs) identified by phone number.
 public sealed class MsisdnPartyDto
 {
-    [Required, StringLength(255)]
+    [Required, StringLength(50)]
     public string Id { get; set; } = "";
 
     [Required, StringLength(20)]

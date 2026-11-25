@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Http.Resilience;
 using Microsoft.Extensions.Options;
 using Payalo.Sample.Web.Components;
 using Payalo.Sample.Web.Endpoints;
@@ -28,8 +29,8 @@ try
     // Typed HttpClient for the gateway:
     //   - ApiKeyHandler injects X-Api-Key on every outbound call.
     //   - The standard resilience handler adds retry + circuit breaker for transient
-    //     faults; by default it only retries idempotent methods (GET/HEAD), so our
-    //     POST initiation calls are NEVER silently retried — protects merchantReference.
+    //     faults. It retries every HTTP method by default, so we turn that off for POST:
+    //     a create is never sent twice by the pipeline.
     builder.Services.AddTransient<ApiKeyHandler>();
     builder.Services.AddHttpClient<PayaloClient>((sp, client) =>
         {
@@ -46,7 +47,7 @@ try
             client.DefaultRequestHeaders.UserAgent.ParseAdd("Payalo.Sample.Web/1.0");
         })
         .AddHttpMessageHandler<ApiKeyHandler>()
-        .AddStandardResilienceHandler();
+        .AddStandardResilienceHandler(options => options.Retry.DisableForUnsafeHttpMethods());
 
     // DEMO-ONLY in-memory webhook log. Swap for a database-backed implementation in
     // production so callbacks survive restarts and can be deduped across replicas.
@@ -80,6 +81,8 @@ try
     var startupOptions = app.Services.GetRequiredService<IOptions<PayaloOptions>>().Value;
     if (string.IsNullOrWhiteSpace(startupOptions.ApiKey))
         app.Logger.LogWarning("Payalo:ApiKey is not set — every gateway call will 401. See README §Quick start.");
+    if (string.IsNullOrWhiteSpace(startupOptions.PublicBaseUrl))
+        app.Logger.LogWarning("Payalo:PublicBaseUrl is not set — callbacks will go to https://example.com and be lost.");
 
     app.Run();
 }

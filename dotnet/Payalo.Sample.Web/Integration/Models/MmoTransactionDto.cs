@@ -5,16 +5,16 @@ namespace Payalo.Sample.Web.Integration.Models;
 // they all share the same wire shape, so one DTO covers every read path.
 //
 // The `Status` field follows the lifecycle: pending -> success | failed (terminal).
-// Once a transaction is success/failed it is **immutable** — no further changes will occur.
+// A final status can still change: an operator reversal sends another callback.
 public sealed class MmoTransactionDto
 {
     public string Status { get; set; } = "";
 
-    // "payin" | "payout" | "tax"
-    public string Type { get; set; } = "";
+    // "payin" | "payout" | "tax". Null while the payment is `new`.
+    public string? Type { get; set; }
 
-    // "direct" | "web" | "qr" | "push"
-    public string Flow { get; set; } = "";
+    // "direct" | "web" | "qr" | "push". Null while the payment is `new`.
+    public string? Flow { get; set; }
 
     public string GatewayReference { get; set; } = "";
 
@@ -30,11 +30,12 @@ public sealed class MmoTransactionDto
     // the transaction to the provider.
     public string? ProviderReference { get; set; }
 
-    public MsisdnPartyDto Party { get; set; } = new();
-    public string Method { get; set; } = "";
-    public string Country { get; set; } = "";
+    // Null while the payment is `new`. On a tax payout Party.Msisdn is null.
+    public MsisdnPartyDto? Party { get; set; }
+    public string? Method { get; set; }
+    public string? Country { get; set; }
 
-    public MoneyDto RequestedAmount { get; set; } = new();
+    public MoneyDto? RequestedAmount { get; set; }
 
     // Final settled amount. Null while pending or if the transaction failed before settling.
     public MoneyDto? FinalAmount { get; set; }

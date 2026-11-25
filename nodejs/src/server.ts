@@ -30,7 +30,7 @@ function renderError(res: Response, page: string, locals: Record<string, unknown
       title: error.title,
       detail: error.detail ?? error.message,
       errorCode: error.errorCode,
-      friendly: describeError(error.errorCode, "Check the request body and try again."),
+      friendly: describeError(error.specificCode, describeError(error.errorCode, "Check the request body and try again.")),
       isRetryable: error.isRetryable,
       traceId: error.traceId,
     },
@@ -40,6 +40,9 @@ function renderError(res: Response, page: string, locals: Record<string, unknown
 // Friendly heads-up if the API key is missing — surfaces in the home page table too.
 if (!config.apiKey) {
   console.warn("PAYALO_API_KEY is not set — every gateway call will 401. See README §TL;DR.");
+}
+if (!config.publicBaseUrl) {
+  console.warn("PAYALO_PUBLIC_BASE_URL is not set — callbacks will go to https://example.com and be lost.");
 }
 
 // ----------------------------------------------------------------------------------
@@ -84,7 +87,7 @@ app.post("/direct-payin", async (req, res) => {
     res.render("direct-payin", { form: { ...form, merchantReference: newMerchantRef("dep") }, response, error: null });
   } catch (e) {
     if (e instanceof PayaloApiError) {
-      return renderError(res, "direct-payin", { form: { ...form, merchantReference: newMerchantRef("dep") }, response: null }, e);
+      return renderError(res, "direct-payin", { submittedReference: form.merchantReference, form: { ...form, merchantReference: newMerchantRef("dep") }, response: null }, e);
     }
     throw e;
   }
@@ -113,7 +116,7 @@ app.post("/web-payin", async (req, res) => {
     res.render("web-payin", { form: { ...form, merchantReference: newMerchantRef("web") }, response, error: null });
   } catch (e) {
     if (e instanceof PayaloApiError) {
-      return renderError(res, "web-payin", { form: { ...form, merchantReference: newMerchantRef("web") }, response: null }, e);
+      return renderError(res, "web-payin", { submittedReference: form.merchantReference, form: { ...form, merchantReference: newMerchantRef("web") }, response: null }, e);
     }
     throw e;
   }
@@ -139,7 +142,7 @@ app.post("/direct-payout", async (req, res) => {
     res.render("direct-payout", { form: { ...form, merchantReference: newMerchantRef("payout") }, response, error: null });
   } catch (e) {
     if (e instanceof PayaloApiError) {
-      return renderError(res, "direct-payout", { form: { ...form, merchantReference: newMerchantRef("payout") }, response: null }, e);
+      return renderError(res, "direct-payout", { submittedReference: form.merchantReference, form: { ...form, merchantReference: newMerchantRef("payout") }, response: null }, e);
     }
     throw e;
   }
@@ -166,7 +169,7 @@ app.post("/qr-payin", async (req, res) => {
     res.render("qr-payin", { form: { ...form, merchantReference: newMerchantRef("qr") }, response, error: null });
   } catch (e) {
     if (e instanceof PayaloApiError) {
-      return renderError(res, "qr-payin", { form: { ...form, merchantReference: newMerchantRef("qr") }, response: null }, e);
+      return renderError(res, "qr-payin", { submittedReference: form.merchantReference, form: { ...form, merchantReference: newMerchantRef("qr") }, response: null }, e);
     }
     throw e;
   }
@@ -204,6 +207,7 @@ app.post("/direct-tax-payout", async (req, res) => {
         res,
         "direct-tax-payout",
         {
+          submittedReference: form.merchantReference,
           form: {
             ...form,
             merchantReference: newMerchantRef("tax"),
@@ -250,8 +254,8 @@ app.get("/records", async (req, res) => {
   }
   try {
     const page = await client.getRecords({
-      from: new Date(filters.from),
-      to: new Date(filters.to),
+      from: new Date(`${filters.from}Z`),
+      to: new Date(`${filters.to}Z`),
       type: filters.type || undefined,
       method: filters.method || undefined,
       status: filters.status || undefined,
@@ -318,8 +322,8 @@ function defaultWebPayIn() {
     msisdn: "+491234567890",
     country: "DE",
     resultUrl: resultUrl(),
-    successRedirectUrl: `${publicBase}/payment/success`,
-    errorRedirectUrl: `${publicBase}/payment/error`,
+    successRedirectUrl: `${publicBase}/status`,
+    errorRedirectUrl: `${publicBase}/status`,
     preferredLanguage: "fr-FR",
     merchantReference: newMerchantRef("web"),
   };
@@ -344,7 +348,7 @@ function defaultQrPayIn() {
   const publicBase = config.publicBaseUrl ? config.publicBaseUrl.replace(/\/$/, "") : "https://example.com";
   return {
     ...defaultDirectPayIn(),
-    displayQrUrl: `${publicBase}/qr/render`,
+    displayQrUrl: `${publicBase}${config.webhookPath}/qr`,
     merchantReference: newMerchantRef("qr"),
   };
 }

@@ -64,7 +64,7 @@
   </div>
 
   <div class="col-lg-5">
-    <%- include('_error', { error }) %>
+    <%- include('_error', { error, isCreate: true }) %>
     <% if (response) { %>
       <%- successPanel %>
     <% } %>

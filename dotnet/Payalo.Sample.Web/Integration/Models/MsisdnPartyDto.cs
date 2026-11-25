@@ -6,7 +6,7 @@ namespace Payalo.Sample.Web.Integration.Models;
 // Used as the `payer` or `payee` field on transaction creation requests.
 public sealed class MsisdnPartyDto
 {
-    [Required, StringLength(255)]
+    [Required, StringLength(50)]
     public string Id { get; set; } = "";
 
     [Required, StringLength(20)]

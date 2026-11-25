@@ -18,10 +18,10 @@ public sealed class PayOutRequest
     [Required, StringLength(10, MinimumLength = 2)]
     public string Country { get; set; } = "";
 
-    [Required, Url, StringLength(2048)]
+    [Required, Url, StringLength(255)]
     public string ResultUrl { get; set; } = "";
 
-    [Required, StringLength(255)]
+    [Required, StringLength(100)]
     public string MerchantReference { get; set; } = "";
 
     [StringLength(255)]

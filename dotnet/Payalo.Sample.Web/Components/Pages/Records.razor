@@ -11,9 +11,9 @@
 </p>
 
 <div class="alert alert-info small">
-    Cursor pagination encodes the original filters, so on follow-up pages we send only the
-    cursor. Editing the filter form after a search resets to page 1 with the new filters
-    on the next click.
+    Every call repeats the From, To and filter values. A page cursor is only valid for the
+    query that produced it, so editing the filter form and moving to the next page returns 400.
+    Search again to start from page 1 with the new filters.
 </div>
 
 <EditForm Model="this" OnValidSubmit="LoadFirstPageAsync" FormName="records-filter">
@@ -96,7 +96,7 @@ else if (_page is not null)
                         <td>@tx.CreatedAt.ToLocalTime():g</td>
                         <td><small>@tx.Type / @tx.Flow</small></td>
                         <td><code>@tx.Method</code></td>
-                        <td>@tx.RequestedAmount.Value.ToString("0.00") @tx.RequestedAmount.Currency</td>
+                        <td>@(tx.RequestedAmount is { } r ? $"{r.Value:0.00} {r.Currency}" : "—")</td>
                         <td>
                             <a href="@($"status?gw={tx.GatewayReference}")">
                                 <code>@tx.GatewayReference</code>
@@ -154,7 +154,7 @@ else if (_page is not null)
 
         try
         {
-            // First call sends the filters; follow-up pages send only the cursor (which encodes them).
+            // Every call repeats the filters; the cursor is only valid for the same query.
             _page = await Client.GetRecordsAsync(
                 from: new DateTimeOffset(DateTime.SpecifyKind(_from, DateTimeKind.Utc)),
                 to: new DateTimeOffset(DateTime.SpecifyKind(_to, DateTimeKind.Utc)),

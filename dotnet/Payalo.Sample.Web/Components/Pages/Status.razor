@@ -72,7 +72,7 @@ else if (_transaction is not null)
                     <tr><th>method / country</th><td><code>@_transaction.Method</code> / @_transaction.Country</td></tr>
                     <tr>
                         <th>requested</th>
-                        <td>@_transaction.RequestedAmount.Value.ToString("0.00") @_transaction.RequestedAmount.Currency</td>
+                        <td>@(_transaction.RequestedAmount is { } r ? $"{r.Value:0.00} {r.Currency}" : "—")</td>
                     </tr>
                     <tr>
                         <th>final</th>

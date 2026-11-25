@@ -1,7 +1,7 @@
 # Payalo Merchant Gateway v2 — .NET console sample
 
 A small command-line client for the Payalo Merchant Gateway v2, built on .NET 9 with
-the same typed `HttpClient` + `ApiKeyHandler` + Polly resilience pipeline as the
+the same typed `HttpClient` + `ApiKeyHandler` + standard resilience pipeline as the
 [Blazor sample](../Payalo.Sample.Web/) next door.
 
 Covers every documented submit + lookup endpoint:
@@ -85,8 +85,10 @@ dotnet run -- records \
   --from 2026-05-01T00:00:00Z --to 2026-05-08T00:00:00Z \
   --type payin --status success
 
-# Records: subsequent page using the cursor returned above
-dotnet run -- records --page-cursor <cursor>
+# Records: next page. Repeat --from, --to and the filters, and add the cursor returned above
+dotnet run -- records \
+  --from 2026-05-01T00:00:00Z --to 2026-05-08T00:00:00Z \
+  --type payin --status success --page-cursor <cursor>
 ```
 
 Run any command with no flags to be prompted interactively.
@@ -127,8 +129,8 @@ preferred over a shared library here.
 
 ## Notes
 
-- The same retry/circuit-breaker pipeline as the web sample. POSTs are NOT retried
-  by default — protects the `merchantReference` idempotency window.
+- The same retry/circuit-breaker pipeline as the web sample. The standard handler retries
+  every method by default; we turn retries off for POST, so a create is never sent twice.
 - `PayaloApiException` is caught at the top level so RFC 7807 errors come out as a
   red one-liner with the friendly explanation, the error code, and the W3C trace
   parent if the gateway returned one (useful in support tickets).

@@ -32,11 +32,16 @@ public sealed class PayaloApiException : Exception
     public string? TraceId { get; }
 
     public string? ErrorCode => Problem?.ErrorCode;
+
+    // On a 400 the errorCode is always `validation_failed`; the specific code is the last segment of `type`.
+    public string? SpecificCode => Problem?.Type?.Split('/').LastOrDefault();
+
     public string? Detail => Problem?.Detail;
     public string? Title => Problem?.Title;
 
-    // 4xx (except 408/429) should never be retried automatically — the request itself
-    // is bad, and retrying with the same merchantReference would burn the idempotency key.
+    // 4xx (except 408/429): the request itself is bad and nothing was created. Fix it and send it again;
+    // the same merchantReference can be used. After a 5xx or a timeout the payment may be registered:
+    // read Payment Status by merchantReference before you send again.
     public bool IsRetryable =>
         (int)StatusCode >= 500 ||
         StatusCode is HttpStatusCode.RequestTimeout or HttpStatusCode.TooManyRequests;

@@ -46,7 +46,7 @@
   </div>
 
   <div class="col-lg-5">
-    {% include "_error.html" %}
+    {% with is_create = true %}{% include "_error.html" %}{% endwith %}
     {% if response %}
       <div class="alert alert-success">
         <h5>Accepted — pending</h5>

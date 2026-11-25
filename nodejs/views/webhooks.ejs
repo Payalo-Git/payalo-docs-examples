@@ -36,7 +36,7 @@
           <td><a href="/status?gw=<%= encodeURIComponent(e.payload.gatewayReference) %>"><code><%= e.payload.gatewayReference %></code></a></td>
           <td><code><%= e.payload.merchantReference || '—' %></code></td>
           <td><code><%= e.payload.method %></code></td>
-          <td><%= Number(e.payload.requestedAmount.value).toFixed(2) %> <%= e.payload.requestedAmount.currency %></td>
+          <td><%= e.payload.requestedAmount ? Number(e.payload.requestedAmount.value).toFixed(2) + ' ' + e.payload.requestedAmount.currency : '—' %></td>
           <td><% if (e.payload.errorCode) { %><span class="badge bg-danger" title="<%= e.payload.errorMessage %>"><%= e.payload.errorCode %></span><% } %></td>
         </tr>
       <% }) %>

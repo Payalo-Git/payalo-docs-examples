@@ -160,12 +160,12 @@ public static class HelpText
         """
         payalo records — GET /records
 
-        Paginated bulk reconciliation. The cursor encodes the original filter set, so
-        on follow-up calls you should pass *only* --page-cursor.
+        Paginated bulk reconciliation. Pass the same --from, --to and filters on every
+        call; a cursor only works with the query that produced it.
 
         Options:
-            --from                  ISO 8601 start (required for first page)
-            --to                    ISO 8601 end (required for first page)
+            --from                  ISO 8601 start (repeat on every page)
+            --to                    ISO 8601 end (repeat on every page)
             --type                  payin | payout | tax (optional filter)
             --method                Method code (optional filter)
             --status                pending | success | failed (optional filter)

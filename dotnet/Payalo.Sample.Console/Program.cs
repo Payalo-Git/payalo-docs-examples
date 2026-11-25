@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Http.Resilience;
 using Microsoft.Extensions.Options;
 using Payalo.Sample.Console.Cli;
 using Payalo.Sample.Console.Commands;
@@ -57,9 +58,9 @@ try
         .AddOptions<PayaloOptions>()
         .Bind(builder.Configuration.GetSection(PayaloOptions.SectionName));
 
-    // Same wiring as the web sample: ApiKeyHandler injects X-Api-Key, the standard
-    // resilience handler retries idempotent methods only — POST initiation is never
-    // silently re-sent, protecting the merchantReference idempotency window.
+    // Same wiring as the web sample: ApiKeyHandler injects X-Api-Key. The standard resilience
+    // handler retries every HTTP method by default, so we turn that off for POST: a create is
+    // never sent twice by the pipeline.
     builder.Services.AddTransient<ApiKeyHandler>();
     builder.Services.AddHttpClient<PayaloClient>((sp, client) =>
         {
@@ -74,7 +75,7 @@ try
             client.DefaultRequestHeaders.UserAgent.ParseAdd("Payalo.Sample.Console/1.0");
         })
         .AddHttpMessageHandler<ApiKeyHandler>()
-        .AddStandardResilienceHandler();
+        .AddStandardResilienceHandler(options => options.Retry.DisableForUnsafeHttpMethods());
 
     // Each command is a thin DI-resolvable type. Adding a new command means: write a
     // new class, register it here, dispatch on its name in the switch below.
@@ -95,6 +96,8 @@ try
         Output.Warn("Set it via `dotnet user-secrets set \"Payalo:ApiKey\" \"...\"`, an env var (Payalo__ApiKey),");
         Output.Warn("or a gitignored appsettings.Local.json next to appsettings.json.");
     }
+    if (startupOptions.DefaultResultUrl.Contains("example.com", StringComparison.OrdinalIgnoreCase))
+        Output.Warn("Payalo:DefaultResultUrl points at example.com — callbacks will be lost. Set your own URL or pass --result-url.");
 
     using var cts = new CancellationTokenSource();
     SystemConsole.CancelKeyPress += (_, e) =>
@@ -141,7 +144,7 @@ try
         Output.Error($"Gateway returned {(int)ex.StatusCode} {ex.StatusCode}");
         if (ex.ErrorCode is not null)
         {
-            var friendly = PayaloErrorMessages.Describe(ex.ErrorCode, ex.Detail);
+            var friendly = PayaloErrorMessages.Describe(ex.SpecificCode, PayaloErrorMessages.Describe(ex.ErrorCode, ex.Detail));
             Output.Error($"  [{ex.ErrorCode}] {friendly}");
         }
         else if (!string.IsNullOrEmpty(ex.RawBody))

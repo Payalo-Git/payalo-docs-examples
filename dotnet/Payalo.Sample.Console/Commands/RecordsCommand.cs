@@ -6,9 +6,8 @@ namespace Payalo.Sample.Console.Commands;
 
 // `payalo records` — GET /records.
 //
-// On the first page we send the full filter set; on follow-up pages we send *only*
-// the cursor — the cursor encodes the original query and the gateway will reject
-// mismatched filters with a 400.
+// Every call sends from, to and the filters. A follow-up page also sends the cursor, which is
+// only valid for the same query: the gateway rejects a cursor with different values (400).
 internal sealed class RecordsCommand
 {
     private readonly PayaloClient _client;
@@ -21,32 +20,17 @@ internal sealed class RecordsCommand
 
         var pageCursor = args.Get("--page-cursor");
 
-        DateTimeOffset from, to;
-        string? type, method, status;
-        int? pageSize;
-
-        if (pageCursor is not null)
-        {
-            // When paging, filters are ignored — the cursor carries them. Stub them out.
-            from = default;
-            to = default;
-            type = method = status = null;
-            pageSize = null;
-        }
-        else
-        {
-            from = ParseTimestamp(args.Get("--from")) ?? Prompt.AskDateTime("From",
-                DateTimeOffset.UtcNow.AddDays(-1));
-            to = ParseTimestamp(args.Get("--to")) ?? Prompt.AskDateTime("To",
-                DateTimeOffset.UtcNow);
-            type     = args.Get("--type");
-            method   = args.Get("--method");
-            status   = args.Get("--status");
-            pageSize = args.Get("--page-size") is { } sizeStr
-                && int.TryParse(sizeStr, NumberStyles.Integer, CultureInfo.InvariantCulture, out var parsed)
-                ? parsed
-                : null;
-        }
+        var from = ParseTimestamp(args.Get("--from")) ?? Prompt.AskDateTime("From",
+            DateTimeOffset.UtcNow.AddDays(-1));
+        var to = ParseTimestamp(args.Get("--to")) ?? Prompt.AskDateTime("To",
+            DateTimeOffset.UtcNow);
+        var type = args.Get("--type");
+        var method = args.Get("--method");
+        var status = args.Get("--status");
+        int? pageSize = args.Get("--page-size") is { } sizeStr
+            && int.TryParse(sizeStr, NumberStyles.Integer, CultureInfo.InvariantCulture, out var parsed)
+            ? parsed
+            : null;
 
         var page = await _client.GetRecordsAsync(from, to, type, method, status, pageSize, pageCursor, ct);
 
@@ -56,7 +40,7 @@ internal sealed class RecordsCommand
             foreach (var tx in page.Data.Take(10))
             {
                 Output.Info($"  [{tx.Status,-7}] {tx.Type,-6} {tx.Method,-12} {tx.GatewayReference} " +
-                            $"{tx.RequestedAmount.Value} {tx.RequestedAmount.Currency} @ {tx.CreatedAt:o}");
+                            $"{tx.RequestedAmount?.Value} {tx.RequestedAmount?.Currency} @ {tx.CreatedAt:o}");
             }
             if (page.Data.Count > 10)
                 Output.Info($"  … plus {page.Data.Count - 10} more on this page.");
