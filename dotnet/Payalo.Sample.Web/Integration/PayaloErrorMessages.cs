@@ -45,7 +45,7 @@ public static class PayaloErrorMessages
         ["config_unsupported_currency"]         = "The currency is not configured for this method/brand.",
         ["config_unsupported_country"]          = "The country is not configured.",
         ["config_unsupported_payment_method"]   = "The method is not enabled for this brand.",
-        ["config_method_route_not_found"]       = "No route exists for the method/country/currency triple.",
+        ["config_method_route_not_found"]       = "No route found for the requested method (e.g. method or transaction type disabled).",
         ["config_method_transaction_min_limit"] = "Amount is below the configured minimum.",
         ["config_method_transaction_max_limit"] = "Amount is above the configured maximum.",
         ["config_credentials_missing"]          = "The brand's provider credentials are missing — contact support.",
